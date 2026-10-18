@@ -790,13 +790,13 @@ describe('opencode', () => {
       SLASH_COMMANDS: [string, string][];
     };
 
-    check('dispatch has the command', app.includes("'zim-opencode':"));
-    check('handler exists', commands.includes('export function cmdZimOpencode'));
+    check('dispatch has the command', app.includes("'andy-opencode':"));
+    check('handler exists', commands.includes('export function cmdAndyOpencode'));
     // The terminal hand-off suspends the TUI around the child.
     check('launch suspends the TUI', commands.includes('suspendTerminal'));
-    check('busy sessions still allow it', app.includes("'zim-opencode',"));
+    check('busy sessions still allow it', app.includes("'andy-opencode',"));
     check('completion popup lists it',
-      SLASH_COMMANDS.some(([c]) => c === '/zim-opencode'));
+      SLASH_COMMANDS.some(([c]) => c === '/andy-opencode'));
 
     // The `--refresh` flag has to reach the pool loader, or it is a no-op.
     check('--refresh reaches the worker',
@@ -819,7 +819,7 @@ describe('opencode', () => {
     // The waiting message: the exact wording asked for, no counts.
     const hunting = /const HUNTING = '([^']*)'/.exec(app)?.[1] ?? '';
     check('the hunting message is the one asked for',
-      hunting === 'ZIM IS MAKING IT UNLIMITED - FINDING THE BEST PROXIES ...', hunting);
+      hunting === 'ANDY IS MAKING IT UNLIMITED - FINDING THE BEST PROXIES ...', hunting);
     check('it does not announce a count',
       ![...hunting].some((c) => /\d/.test(c)), hunting);
     const frames = /const HUNT_FRAMES = '([^']*)'/.exec(app)?.[1] ?? '';

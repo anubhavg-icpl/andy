@@ -1,7 +1,7 @@
 /**
  * recon-overlay.tsx — the live recon window (ReconOverlay).
  *
- * What this module is: the Ink port of zimzilla/ui/app.py's ReconOverlay — a
+ * What this module is: the Ink port of andy/ui/app.py's ReconOverlay — a
  * centred window narrating the recon phase (each tool call, the model's prose)
  * while it runs for minutes. Invariants: it is deliberately NOT a gate — no
  * keys, no dismiss — the prompt underneath stays live so /stop-hunt remains

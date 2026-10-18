@@ -168,7 +168,7 @@ describe('validation', () => {
   describe('github', () => {
     const gh = osint.OSINT_KINDS['github']!;
 
-    for (const handle of ['torvalds', 'Mr-Destroyer', 'a', 'x'.repeat(39),
+    for (const handle of ['torvalds', 'andy', 'a', 'x'.repeat(39),
       'user123', 'user-name-123']) {
       it(`validate: accepts github '${handle}'`, () => {
         const [ok, err] = osint.validate(gh, handle);
@@ -1235,7 +1235,7 @@ describe('prompt instagram', () => {
     expect(p.includes('RelayPreloader')).toBe(true);
   });
   it('instagram prompt: gives the exact Googlebot UA string', () => {
-    expect(p.includes('Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'))
+    expect(p.includes('Moandy/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'))
       .toBe(true);
   });
   it('instagram prompt: warns the gate is the exact string, not the word', () => {

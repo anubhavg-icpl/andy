@@ -1,5 +1,5 @@
 /**
- * sandbox.ts — filesystem jail (port of zimzilla/sandbox.py).
+ * sandbox.ts — filesystem jail (port of andy/sandbox.py).
  *
  * What this module is: the one gate every file tool's path argument goes
  * through. It refuses anything that escapes the working directory unless the

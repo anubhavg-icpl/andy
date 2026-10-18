@@ -16,7 +16,7 @@
  *    `list_dir`, which is ungated and local; a `bash` stub would really run.
  *
  * Port note: the Textual-app half of the Python suite (pilot-driven screen,
- * overlay, busy-gate and transcript tests over ZimZillaApp) has no Ink
+ * overlay, busy-gate and transcript tests over AndyApp) has no Ink
  * equivalent — ui/app.tsx is a React function component with internal state,
  * not an object with `_handle_command`/`query_one`. Those suites are kept
  * below as `it.skip` with the reason so the inventory survives to a future
@@ -1328,8 +1328,8 @@ describe('test_hunt: /bug-hunt regression suite', () => {
   });
 
   it.skip('test_pane', () => {
-    // GAP (TS port): Python drove the Textual ZimPane widget imperatively
-    // (`pane.hunt_agents`, `pane.note_hunt`, ...). In the Ink port ZimPane
+    // GAP (TS port): Python drove the Textual AndyPane widget imperatively
+    // (`pane.hunt_agents`, `pane.note_hunt`, ...). In the Ink port AndyPane
     // is a forwardRef React component whose hunt state lives in useState
     // inside the component and is only reachable through the ref while the
     // component is rendered — there is no headless model to poke without an
@@ -1556,7 +1556,7 @@ describe('test_hunt: /bug-hunt regression suite', () => {
     // drawing half calls WaveWeb's own public note-methods — the same ones
     // the overlay dispatches on.
     const wd = wdFor('test_planner_feed');
-    const cfg = cfgFor(wd, { mode: 'zim' });
+    const cfg = cfgFor(wd, { mode: 'andy' });
     cfg.stateDir = stateDir(wd, 'test_planner_feed');
 
     const web = new WaveWeb('t.test', getPalette('green', null), { wave: 1, size: 10 });
@@ -1656,7 +1656,7 @@ describe('test_hunt: /bug-hunt regression suite', () => {
     // One directory per scope, reused: a second campaign against the same
     // host adds to the first's history rather than starting a sibling.
     const wd = wdFor('test_scope_naming');
-    const cfg = cfgFor(wd, { mode: 'zim' });
+    const cfg = cfgFor(wd, { mode: 'andy' });
     cfg.stateDir = stateDir(wd, 'test_scope_naming');
     const first = huntMod.caseDir(cfg, 'https://mail.lerevecraze.com/login');
     const second = huntMod.caseDir(cfg, 'mail.lerevecraze.com');
@@ -1695,7 +1695,7 @@ describe('test_hunt: /bug-hunt regression suite', () => {
     };
 
     const wd = wdFor('test_migrate_hunts');
-    const cfg = cfgFor(wd, { mode: 'zim' });
+    const cfg = cfgFor(wd, { mode: 'andy' });
     cfg.stateDir = stateDir(wd, 'test_migrate_hunts');
     const root = path.join(cfg.stateDir, 'hunts');
     fs.mkdirSync(root, { recursive: true });
@@ -1800,13 +1800,13 @@ describe('test_hunt: /bug-hunt regression suite', () => {
     // had no path to the campaign directory and said nothing was found —
     // over a directory that already held a high-severity finding.
     const wd = wdFor('test_hunt_findings_tool');
-    const cfg = cfgFor(wd, { mode: 'zim' });
+    const cfg = cfgFor(wd, { mode: 'andy' });
     cfg.stateDir = stateDir(wd, 'test_hunt_findings_tool');
 
     // Nothing has run yet: the tool must say so, not invent a campaign. On
     // its own pristine store.
     const virginWd = fs.mkdtempSync(path.join(os.tmpdir(), 'andy-hunt-virgin-'));
-    const virgin = cfgFor(virginWd, { mode: 'zim' });
+    const virgin = cfgFor(virginWd, { mode: 'andy' });
     virgin.stateDir = path.join(virginWd, 'state');
     const emptyRes = await toolsMod.execute('hunt_findings', {}, virgin);
     check(
@@ -2064,7 +2064,7 @@ describe('test_hunt: /bug-hunt regression suite', () => {
 
     const events: HuntEvent[] = [];
     const stop = new huntMod.AsyncEvent();
-    const cfg = cfgFor(wd, { mode: 'zim' });
+    const cfg = cfgFor(wd, { mode: 'andy' });
     cfg.stateDir = stateDir(wd, 'test_campaign_notes');
 
     const run = await huntMod.runHunt(cfg, 'notes.test', {
@@ -2199,7 +2199,7 @@ describe('test_hunt: /bug-hunt regression suite', () => {
     const wd = wdFor('test_repeat_hunt_reuses_recon');
     const roster = '{"summary": "s", "workers": ['
       + '{"name": "auth", "brief": "test auth", "owns": ["auth"]}]}';
-    const cfg = cfgFor(wd, { mode: 'zim' });
+    const cfg = cfgFor(wd, { mode: 'andy' });
     cfg.stateDir = stateDir(wd, 'test_repeat_hunt_reuses_recon');
 
     // ---- run 1: a normal campaign, which leaves recon and a finding on disk.
@@ -2444,7 +2444,7 @@ describe('test_hunt: /bug-hunt regression suite', () => {
 
     const events: HuntEvent[] = [];
     const stop = new huntMod.AsyncEvent();
-    const cfg = cfgFor(wd, { mode: 'zim' });
+    const cfg = cfgFor(wd, { mode: 'andy' });
     cfg.stateDir = stateDir(wd, 'test_plan_records_a_fallback');
 
     const run = await huntMod.runHunt(cfg, 'fallback.test', {
@@ -2493,7 +2493,7 @@ describe('test_hunt: /bug-hunt regression suite', () => {
 
     const events: HuntEvent[] = [];
     const stop = new huntMod.AsyncEvent();
-    const cfg = cfgFor(wd, { mode: 'zim' });
+    const cfg = cfgFor(wd, { mode: 'andy' });
     cfg.stateDir = stateDir(wd, 'test_hunt_loop');
 
     const run = await huntMod.runHunt(cfg, 'x.test', {
@@ -2566,10 +2566,10 @@ describe('test_hunt: /bug-hunt regression suite', () => {
 
     // The planner is read-only, so it cannot do the work itself.
     const planners = factory.built.filter((a) => a.cfg.mode === 'plan');
-    const agents = factory.built.filter((a) => a.cfg.mode === 'zim');
+    const agents = factory.built.filter((a) => a.cfg.mode === 'andy');
     check('hunt: the planner runs in plan mode', planners.length === 1);
     check(
-      'hunt: agents inherit the session mode (zim)',
+      'hunt: agents inherit the session mode (andy)',
       agents.length === 3,
       String(agents.length),
     ); // recon + 2 workers
@@ -2597,7 +2597,7 @@ describe('test_hunt: /bug-hunt regression suite', () => {
 
     const events: HuntEvent[] = [];
     const stop = new huntMod.AsyncEvent();
-    const cfg = cfgFor(wd, { mode: 'zim' });
+    const cfg = cfgFor(wd, { mode: 'andy' });
     cfg.stateDir = stateDir(wd, 'test_contract_in_worker_prompts');
 
     await huntMod.runHunt(cfg, 'x.test', {
@@ -2655,7 +2655,7 @@ describe('test_hunt: /bug-hunt regression suite', () => {
 
     const events: HuntEvent[] = [];
     const stop = new huntMod.AsyncEvent();
-    const cfg = cfgFor(wd, { mode: 'zim' });
+    const cfg = cfgFor(wd, { mode: 'andy' });
     cfg.stateDir = stateDir(wd, 'test_live_reporting_mid_wave');
 
     const run = await huntMod.runHunt(cfg, 'x.test', {
@@ -2746,7 +2746,7 @@ describe('test_hunt: /bug-hunt regression suite', () => {
 
     const events: HuntEvent[] = [];
     const stop = new huntMod.AsyncEvent();
-    const cfg = cfgFor(wd, { mode: 'zim' });
+    const cfg = cfgFor(wd, { mode: 'andy' });
     cfg.stateDir = stateDir(wd, 'test_live_reporting_is_per_agent');
 
     const run = await huntMod.runHunt(cfg, 'x.test', {
@@ -2812,7 +2812,7 @@ describe('test_hunt: /bug-hunt regression suite', () => {
 
     const events: HuntEvent[] = [];
     const stop = new huntMod.AsyncEvent();
-    const cfg = cfgFor(wd, { mode: 'zim' });
+    const cfg = cfgFor(wd, { mode: 'andy' });
     cfg.stateDir = stateDir(wd, 'test_hunt_replans_from_findings');
 
     const run = await huntMod.runHunt(cfg, 'x.test', {
@@ -2859,7 +2859,7 @@ describe('test_hunt: /bug-hunt regression suite', () => {
     const roster = '{"summary": "s", "workers": ['
       + '{"name": "w1", "brief": "first", "owns": ["a"]}]}';
     const wd = wdFor('test_one_wave_is_the_default');
-    const cfg = cfgFor(wd, { mode: 'zim' });
+    const cfg = cfgFor(wd, { mode: 'andy' });
     cfg.stateDir = stateDir(wd, 'test_one_wave_is_the_default');
 
     const factoryFor = (marker: string) =>
@@ -2983,7 +2983,7 @@ describe('test_hunt: /bug-hunt regression suite', () => {
     // On a scope that has never run a wave the advice is the plain command,
     // not "run wave 1 first" — there is no earlier wave to point at.
     const virginParent = stateDir(wd, 'test_one_wave_is_the_default_fresh');
-    const cfg2 = cfgFor(wd, { mode: 'zim' });
+    const cfg2 = cfgFor(wd, { mode: 'andy' });
     cfg2.stateDir = virginParent;
     const eventsV: HuntEvent[] = [];
     const stopV = new huntMod.AsyncEvent();
@@ -3059,7 +3059,7 @@ describe('test_hunt: /bug-hunt regression suite', () => {
 
     const events: HuntEvent[] = [];
     const stop = new huntMod.AsyncEvent();
-    const cfg = cfgFor(wd, { mode: 'zim' });
+    const cfg = cfgFor(wd, { mode: 'andy' });
     cfg.stateDir = stateDir(wd, 'test_hunt_fallback_wave');
 
     const run = await huntMod.runHunt(cfg, 'x.test', {
@@ -3119,7 +3119,7 @@ describe('test_hunt: /bug-hunt regression suite', () => {
 
     const events: HuntEvent[] = [];
     const stop = new huntMod.AsyncEvent();
-    const cfg = cfgFor(wd, { mode: 'zim' });
+    const cfg = cfgFor(wd, { mode: 'andy' });
     cfg.stateDir = stateDir(wd, 'test_brief_context');
 
     const run = await huntMod.runHunt(cfg, 'x.test', {
@@ -3179,7 +3179,7 @@ describe('test_hunt: /bug-hunt regression suite', () => {
 
     const events: HuntEvent[] = [];
     const stop = new huntMod.AsyncEvent();
-    const cfg = cfgFor(wd, { mode: 'zim' });
+    const cfg = cfgFor(wd, { mode: 'andy' });
     cfg.stateDir = stateDir(wd, 'test_planner_retry');
 
     await huntMod.runHunt(cfg, 'x.test', {
@@ -3223,7 +3223,7 @@ describe('test_hunt: /bug-hunt regression suite', () => {
 
     const events: HuntEvent[] = [];
     const stop = new huntMod.AsyncEvent();
-    const cfg = cfgFor(wd, { mode: 'zim' });
+    const cfg = cfgFor(wd, { mode: 'andy' });
     cfg.stateDir = stateDir(wd, 'test_planner_fallback_shows_raw');
 
     await huntMod.runHunt(cfg, 'x.test', {
@@ -3268,7 +3268,7 @@ describe('test_hunt: /bug-hunt regression suite', () => {
 
     const events: HuntEvent[] = [];
     const stop = new huntMod.AsyncEvent();
-    const cfg = cfgFor(wd, { mode: 'zim' });
+    const cfg = cfgFor(wd, { mode: 'andy' });
     cfg.stateDir = stateDir(wd, 'test_hunt_result_event_carries_args');
 
     await huntMod.runHunt(cfg, 'x.test', {
@@ -3360,7 +3360,7 @@ describe('test_hunt: /bug-hunt regression suite', () => {
       stop.set();
     };
 
-    const cfg = cfgFor(wd, { mode: 'zim' });
+    const cfg = cfgFor(wd, { mode: 'andy' });
     cfg.stateDir = stateDir(wd, 'test_hunt_stops_midwave');
     const stopTask = stopper();
 
@@ -3412,7 +3412,7 @@ describe('test_hunt: /bug-hunt regression suite', () => {
       if (ev.type === 'hunt_summary_done') stop.set();
     };
 
-    const cfg = cfgFor(wd, { mode: 'zim' });
+    const cfg = cfgFor(wd, { mode: 'andy' });
     cfg.stateDir = stateDir(wd, 'test_hunt_summary_flag');
     const run = await huntMod.runHunt(cfg, 'x.test', {
       onEvent,
@@ -3486,7 +3486,7 @@ describe('test_hunt: /bug-hunt regression suite', () => {
       if (ev.type === 'hunt_wave_end') stop.set();
     };
 
-    const cfg = cfgFor(wd, { mode: 'zim' });
+    const cfg = cfgFor(wd, { mode: 'andy' });
     cfg.stateDir = stateDir(wd, 'test_recon_reports_live');
 
     await huntMod.runHunt(cfg, 'x.test', {
@@ -3520,7 +3520,7 @@ describe('test_hunt: /bug-hunt regression suite', () => {
 
   // === SECTION === the Textual-app half (skipped: no Ink headless seam) ====
   //
-  // Everything below drove `ZimZillaApp` through Textual's `run_test` pilot —
+  // Everything below drove `AndyApp` through Textual's `run_test` pilot —
   // a live widget tree with imperative access (`app._handle_command`,
   // `query_one`, screen stacks, pilot.press). The Ink port's AndyApp is a
   // React function component: its command dispatch, busy gate, overlay

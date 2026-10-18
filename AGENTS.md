@@ -309,7 +309,7 @@ included.
 ## Working on this repository
 
 Everything above is the doctrine this harness ships (it is installed into
-`~/.andy/AGENTS.md` by `./setup.sh` and followed by `--mode zim`). This section
+`~/.andy/AGENTS.md` by `./setup.sh` and followed by `--mode andy`). This section
 is for developing the harness itself.
 
 The codebase is the **andy** TypeScript port (Node ≥ 22, ESM, Ink TUI). The
@@ -326,7 +326,7 @@ npm run build        # emit dist/cli.js (tsup); the launcher prefers it when pre
 ### Landmines
 
 - **The Python original lives in git history, not on disk.** The whole
-  `zimzilla/` tree, the pytest suites, `pyproject.toml` and `requirements.txt`
+  `andy/` tree, the pytest suites, `pyproject.toml` and `requirements.txt`
   were removed at cutover; tag `pre-andy-port` points at the last Python
   commit. `src/PORT-MAP.md` still names Python modules as its mapping rows —
   those are historical references, not paths that exist.

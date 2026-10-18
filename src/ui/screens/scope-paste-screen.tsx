@@ -1,7 +1,7 @@
 /**
  * scope-paste-screen.tsx — multi-line paste box for the scope validator.
  *
- * What this module is: the Ink port of zimzilla/ui/app.py's ScopePasteScreen.
+ * What this module is: the Ink port of andy/ui/app.py's ScopePasteScreen.
  * The prompt is one row and would fold a pasted programme overview into a
  * single line, so this takes the paste as a multi-line buffer instead.
  * Invariants: ctrl+s submits the text (empty/whitespace submits as null),

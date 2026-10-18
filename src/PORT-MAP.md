@@ -1,17 +1,17 @@
-# PORT-MAP — zimzilla (Python) → andy (TypeScript)
+# PORT-MAP — Python original → Andy (TypeScript)
 
 Coordination artifact for the parallel port. Source of truth for who ports what,
 against which contract, in which order. Do not edit signatures here without
 updating `src/shared.ts` — the two are the same contract written twice.
 
-- Source: the Python `zimzilla/` tree — **43 files**, = **41 real modules**
+- Source: the historical Python package — **43 files**, = **41 real modules**
   (the two `__init__.py` files are version/empty markers, folded into
   `package.json` / `cli.ts`; see rows 40–41), ~33,880 lines. The tree was
   removed at cutover; it lives in git history at tag **`pre-andy-port`**
-  (`git checkout pre-andy-port -- zimzilla/` to consult it).
-- Target: `/home/anubhavg/Desktop/Bikanari/src/` — ESM, Node ≥ 22, strict TS,
+  (`git show pre-andy-port:<module path>` to consult a file).
+- Target: this repository's `src/` — ESM, Node ≥ 22, strict TS,
   Ink 8 + React 19 TUI, `@anthropic-ai/sdk`, `markdown-it`, `yaml`, `zod`, `chalk`.
-- Package/bin name: `andy`. Identity in prompts/banners: "ZimZilla" → "Andy".
+- Package/bin name and product identity: `Andy`.
 
 Naming conventions for the port (apply everywhere, no per-module decisions):
 
@@ -32,7 +32,7 @@ Naming conventions for the port (apply everywhere, no per-module decisions):
 Key: **exports** lists the public surface other modules import (the contract to
 reproduce; internal regex/private helpers are omitted — port them unexported).
 **Imported-by** is the reverse dependency list from the Python import graph
-(`rg '^\s*(from|import)\s+(\.|zimzilla)'`). "lazy" = Python function-level
+(`rg '^\s*(from|import)\s+(\.|andy)'`). "lazy" = Python function-level
 import → in TS use `await import()` inside the function or restructure.
 
 ### Core runtime
@@ -57,7 +57,7 @@ import → in TS use `await import()` inside the function or restructure.
 
 ### Provider / credential sources
 
-All five provider modules + `sources.py` form one lazily-circular family in
+All historical provider modules + `sources.py` form one lazily-circular family in
 Python (`sources` knows the providers; each provider falls back to
 `sources.model_ids`). In TS keep the cycle lazy with function-level
 `await import()`, or split a tiny `provider-contract.ts` with the shared
@@ -65,11 +65,12 @@ Python (`sources` knows the providers; each provider falls back to
 
 | # | Python | Target TS | Exports (TS signatures) | Imported-by |
 |---|---|---|---|---|
-| 16 | `sources.py` (430) | `src/sources.ts` | `class Source {key, label, port, baseUrl, model, ...}`; `BUILTIN_KEYS: Set<string>` (tokenharbour, openrouter, unorouter, antseed, aihubmix); `LOGFARE_MODELS`, `TOKENJUICE_MODELS`, `MODELS_BY_KEY`; `discover(): Record<string, Source>` (scans LiteLLM proxy service/config/profile files); `modelsFor(baseUrl): string[] \| undefined`; `contextWindowFor(baseUrl, model): number \| undefined`; `sourceForPort(port)`, `currentKey(): string \| undefined` (reads `$ANDY_HOME/current-source`), `setCurrent(key)`; `activeKey(baseUrl)`; `loadProfile(src): Record<string, string>`; `proxyHealthy(port, timeout?): boolean`, `startProxy(src, timeout?): Promise<[boolean, string]>` | `__main__`, `agent` (lazy), `ui/complete` (lazy), `ui/app`; lazy back-refs from all 6 provider modules |
+| 16 | `sources.py` (430) | `src/sources.ts` | `class Source {key, label, port, baseUrl, model, ...}`; `BUILTIN_KEYS: Set<string>` (tokenharbour, openrouter, unorouter, antseed, aihubmix, zai); `LOGFARE_MODELS`, `TOKENJUICE_MODELS`, `ZAI_MODELS`, `MODELS_BY_KEY`; `discover(): Record<string, Source>` (scans LiteLLM proxy service/config/profile files); `modelsFor(baseUrl): string[] \| undefined`; `contextWindowFor(baseUrl, model): number \| undefined`; `sourceForPort(port)`, `currentKey(): string \| undefined` (reads `$ANDY_HOME/current-source`), `setCurrent(key)`; `activeKey(baseUrl)`; `loadProfile(src): Record<string, string>`; `proxyHealthy(port, timeout?): boolean`, `startProxy(src, timeout?): Promise<[boolean, string]>` | `__main__`, `agent` (lazy), `ui/complete` (lazy), `ui/app`; lazy back-refs from the provider family |
 | 17 | `logfare.py` (219) | `src/logfare.ts` | `class Model`; `fetchModels({hours, timeout}): Promise<[Model[] \| null, string]>` (memoised 300 s); `modelIds(**kw)`, `cachedModels()`, `cachedIds()`, `catalogAge()`, `clearCache()`; `healthFor(model)`, `isLogfare(baseUrl): boolean` | `sources` (lazy ×2), `__main__`, `ui/app` |
 | 18 | `tokenharbour.py` (438) | `src/tokenharbour.ts` | Same catalog contract as openrouter (Model class, `fetchModels(token?)`, `freeModels`, `modelIds`, `cached*`, `clearCache`, `priceFor(model, models?)`, `catalogAge`); credential side: `loadCredentials(): [string, string, string] \| null` (profile file → `ANTHROPIC_*` env → `~/.claude` source), `saveKey(token, model?)`, `hasKey()`, `looksLikeKey(v)`, `applyTo(cfg)`, `appliesToDefaultEndpoint(baseUrl)`, `currentKey/setCurrent` | `sources` (lazy ×2), `__main__`, `ui/app` |
 | 19 | `openrouter.py` (532) | `src/openrouter.ts` | Identical contract shape to #18 against `openrouter.ai/api`; plus `usableFreeModels(token?)` | `sources` (lazy ×2), `__main__`, `ui/app` |
 | 20 | `aihubmix.py` (530) | `src/aihubmix.ts` | Identical contract shape to #18 against `aihubmix.com` (free suffixes `-free`/`:free`) | `sources` (lazy ×2), `__main__`, `ui/app` |
+| — | *(TS-only)* | `src/zai.ts` | Z.ai GLM Coding Plan source: Anthropic base `https://api.z.ai/api/anthropic`, credential-scoped `/v1/models`, Coding Plan key profile, subscription-safe model metadata | `sources` (lazy ×2), `__main__`, `ui/app` |
 | 21 | `unorouter.py` (804) | `src/unorouter.ts` | Identical contract shape plus `modelFor(model, models?)`, `defaultFreeModel(token?)`, per-model metadata (`contextWindow`) | `sources` (lazy ×2), `__main__`, `ui/app` |
 | 22 | `antseed.py` (856) | `src/antseed.ts` | Local P2P buyer. `buyerConfig(): Record<string, unknown>`, `proxyPort()`, `isAntseed(baseUrl)`, `reachable(timeout?)`; `class Peer`, `class Model`; `fetchModels(baseUrl?, {timeout}): Promise<[Model[] \| null, string]>` + full cached suite; `PREFERRED_FREE_MODELS`, `defaultFreePin(baseUrl?)`, `freeModelIds`, `agenticModels`; pin side: `loadPin()/savePin(model, peer?)` (NOT saveKey — antseed has no key); `applyTo(cfg)`, `appliesToDefaultEndpoint`, `looksLikeKey`, `currentKey/setCurrent` | `sources` (lazy ×2), `__main__`, `ui/app` |
 | 23 | `ldxhub.py` (587) | `src/ldxhub.ts` | Document-job service client. `SERVICES: Record<string, string>`, `DEFAULT_VAR`; `class Entry`; `loadCredentials(): [string, Record<string, string>, string] \| null` (`LDXHUB_API_KEY` env → `$ANDY_HOME/ldxhub/source`), `saveKey(token, defaults?)`, `saveDefault(service, entryId)`, `hasKey(): boolean`; `fetchCatalog(service, token?, {timeout}): Promise<Entry[]>` (300 s cache), `cachedCatalog`, `clearCache`, `catalogAge`; `resolveEntry(service, explicit?, creds?)`, `defaultFor(service, creds?)`; `uploadFile(path, token): Promise<[string, string]>`, `downloadFile(fileId, token, dest)`, `createJob/getJob/runJob(service, payload, token, ...)`, `jobOutput(job): [string \| null, string \| null, string]`; `serviceHelp()` | `agent` (lazy ×2 — hasKey gates tool schemas), `tools` (lazy ×7), `ui/app` |
@@ -98,13 +99,13 @@ honest extension. Non-component helpers inside them may live in the same file.
 
 | # | Python | Target TS | Exports | Imported-by |
 |---|---|---|---|---|
-| 31 | `ui/app.py` (6268) | `src/ui/app.tsx` | `class ZimZillaApp → AndyApp: FC<{cfg: Config; resume?: SessionPayload}>` — the shell. Composition: HeaderBar + ChatPane + PromptInput + StatusBar + LoopRail/TelemetryRail + WaveWeb + overlays (PermissionModal, ReconOverlay, WaveOverlay, ScopePasteScreen, FindingsPanel, CompletionPopup, CommandPalette, BootScreen). Public seams other code touches: `requestPermission(name, args, preview): Promise<"yes"\|"no"\|"always">` (passed as `Agent`'s permissionHandler), `_handleEvent(ev: AgentEvent)` (§2.1 dispatch), slash commands (`/model /mode /theme /rain /think /compact /team /hunt /ad /crack /osint /phish /panes /ldxhub-api-setup /sources …` — enumerate from `ui/complete.SLASH_COMMANDS` + `palette_cmd`), `actionInterrupt/actionClear/actionQuit/actionPalette` | `__main__` only |
-| 32 | `ui/widgets.py` (1081) | `src/ui/widgets.tsx` | `PromptInput` (Input subclass → wrapped ink `TextInput`), `HeaderBar`, `ChatPane` (the transcript; streaming/reasoning slots `setStream/setReasoning`), `StatusBar` (reactive counters: iterations, turns, tokens, cost, activity), `ZimPane` (the /panes agent grid); `NEWLINE_GLYPH` | `ui/app` |
+| 31 | `ui/app.py` (6268) | `src/ui/app.tsx` | `class AndyApp → AndyApp: FC<{cfg: Config; resume?: SessionPayload}>` — the shell. Composition: HeaderBar + ChatPane + PromptInput + StatusBar + LoopRail/TelemetryRail + WaveWeb + overlays (PermissionModal, ReconOverlay, WaveOverlay, ScopePasteScreen, FindingsPanel, CompletionPopup, CommandPalette, BootScreen). Public seams other code touches: `requestPermission(name, args, preview): Promise<"yes"\|"no"\|"always">` (passed as `Agent`'s permissionHandler), `_handleEvent(ev: AgentEvent)` (§2.1 dispatch), slash commands (`/model /mode /theme /rain /think /compact /team /hunt /ad /crack /osint /phish /panes /ldxhub-api-setup /sources …` — enumerate from `ui/complete.SLASH_COMMANDS` + `palette_cmd`), `actionInterrupt/actionClear/actionQuit/actionPalette` | `__main__` only |
+| 32 | `ui/widgets.py` (1081) | `src/ui/widgets.tsx` | `PromptInput` (Input subclass → wrapped ink `TextInput`), `HeaderBar`, `ChatPane` (the transcript; streaming/reasoning slots `setStream/setReasoning`), `StatusBar` (reactive counters: iterations, turns, tokens, cost, activity), `AndyPane` (the /panes agent grid); `NEWLINE_GLYPH` | `ui/app` |
 | 33 | `ui/renderers.py` (647) | `src/ui/renderers.tsx` | Panel/line builders over chalk + Box: `toolCallPanel`, `toolResultPanel`, `toolRunningPanel`, `huntToolPanel`, `turnMarker`, `renderOutputText`, `diffPanel`, `userPromptBlock`, `errorBlock/warningBlock/blockedBlock`, `bannerRenderable`, `reasoningLive/reasoningPanel`, `agentText/agentLabel/agentLine/agentEventLine`, `SEVERITY_PALETTE`, `SEVERITY_ORDER`, `severityStyle`, `findingLine/findingDetail`, `langForPath`, `detectLangForCommand`, `hackerSyntax` (Rich `Syntax` → re-implement with a highlighter or plain chalk) | `ui/app` (as namespace `R`), lazy: `ui/widgets` (×3) |
 | 34 | `ui/markdown.py` (479) | `src/ui/markdown.tsx` | markdown-it based renderer → React nodes: `markdownText(text, palette): ReactNode`, `markdownRenderable(text, palette): ReactNode`, `markdownLine(text, palette): ReactNode` | `ui/renderers`, `ui/app`, lazy: `ui/widgets` |
 | 35 | `ui/rails.py` (702) | `src/ui/rails.tsx` | `STAGES`, `STAGE_LABEL`; `RailResizeMixin` → custom hook `useRailResize`; `LoopRail`, `Waveform`, `ContextGauge`, `FileRiver`, `CallStrip`, `TelemetryRail` (all `Static` subclasses → FC) | `ui/app` |
 | 36 | `ui/web.py` (1621) | `src/ui/web.tsx` | `WaveWeb` — the hunt visualiser grid. `LANES`, `SEVERITY_LABEL`, `severityStyle(palette, severity)`; layout consts (`RAIL_W`, `DRAWER_W`, …); `class AgentCell/Detail/Layout` → types + helpers | `ui/app` |
-| 37 | `ui/banner.py` (302) | `src/ui/banner.tsx` | ASCII font banner + emblem + spinner: `FONT`, `renderWord`, `bannerLines(spacing?): string[]`, `outlineLines(width?)`, `bannerSubtitle()`, `bannerWidth()`, `EMBLEM`, `spinFrame(i)`, `emblemFrame(theta)`, `spinFrameIndex(elapsed)`, `splashMark(palette, model?, baseUrl?)` — renders "ZIMZILLA" wordmark → **"ANDY"** | `ui/boot`, `ui/renderers` (lazy), `ui/app` (lazy) |
+| 37 | `ui/banner.py` (302) | `src/ui/banner.tsx` | ASCII font banner + emblem + spinner: `FONT`, `renderWord`, `bannerLines(spacing?): string[]`, `outlineLines(width?)`, `bannerSubtitle()`, `bannerWidth()`, `EMBLEM`, `spinFrame(i)`, `emblemFrame(theta)`, `spinFrameIndex(elapsed)`, `splashMark(palette, model?, baseUrl?)` — renders "ANDY" wordmark → **"ANDY"** | `ui/boot`, `ui/renderers` (lazy), `ui/app` (lazy) |
 | 38 | `ui/boot.py` (257) | `src/ui/boot.tsx` | `BootScreen: FC` (glitch-decrypt boot animation over the banner + MatrixRain) | `ui/app` |
 | 39 | `ui/rain.py` (402) | `src/ui/rain.tsx` | `GLYPHS`, `ASCII_GLYPHS`, `TAIL_LEN`; `MatrixRain: FC` (canvas widget → interval-driven state), `RainRichLog` (RichLog subclass → custom scrollback component), `RainCanvas` | `ui/widgets`, `ui/boot` |
 | 40 | `ui/complete.py` (306) | `src/ui/complete.tsx` | `SLASH_COMMANDS: [string, string][]` (single source for the command list — app + palette share it), `MODE_NAMES`; `MAX_ROWS=8`, `MAX_FILES=200`; `iterFiles(root, limit?): string[]`; `CompletionPopup: FC` | `ui/app` |
@@ -158,7 +159,7 @@ in the same PR.
 
 ### 2.3 How ui/app consumes the agent (the render loop)
 
-1. `ZimZillaApp` constructs one `Agent` with `permissionHandler = self.request_permission` (a modal: PermissionModal) — TS: `AndyApp` passes a callback that sets React state and resolves a promise on modal answer.
+1. `AndyApp` constructs one `Agent` with `permissionHandler = self.request_permission` (a modal: PermissionModal) — TS: `AndyApp` passes a callback that sets React state and resolves a promise on modal answer.
 2. Turns are driven by `for await (const ev of agent.runTurn(prompt))` → `_handleEvent(ev)` mutating widget state (StatusBar counters, ChatPane stream buffers, LoopRail stage) — in TS, each handler dispatch is a `setState`.
 3. Widgets are addressed with `query_one("#id", Type)` + reactive attribute writes (`bar.iterations = n`) — TS: lift to props/context; no query_one equivalent exists (see §3).
 4. Special consumers: `ui/web.py` (WaveWeb) re-renders the hunt grid from hunt events + `hunt.SEVERITY_ORDER/normaliseSeverity`; `ui/widgets.ChatPane` owns the streaming/reasoning buffer pair (`setStream`/`setReasoning`) that `text_delta`/`reasoning_delta` append to.
@@ -203,7 +204,7 @@ What this codebase actually uses of Textual, and its Ink 8 / React 19 equivalent
 
 | Textual (Python) | Ink / React (TS) | Notes for this port |
 |---|---|---|
-| `App` subclass (`ZimZillaApp(App)`) | `render(<AndyApp …/>)` + root `FC` | Single render tree; no App object — state lives in React |
+| `App` subclass (`AndyApp(App)`) | `render(<AndyApp …/>)` + root `FC` | Single render tree; no App object — state lives in React |
 | `compose() -> ComposeResult` | JSX return of the component | children replace compose |
 | `on_mount()` | `useEffect(() => {...}, [])` | return cleanup fn for timers |
 | `Widget` / `Static` subclass | `FC<Props>` rendering `<Box>`/`<Text>` | reactive attributes → props |
@@ -235,10 +236,10 @@ What this codebase actually uses of Textual, and its Ink 8 / React 19 equivalent
 
 ---
 
-## 4. ZIMZILLA → ANDY renames (complete inventory)
+## 4. ANDY → ANDY renames (complete inventory)
 
 Every env var, path, file, socket, alias and identity string containing
-ZIMZILLA in the Python tree, with its replacement. Non-ZIMZILLA env vars stay
+ANDY in the Python tree, with its replacement. Non-ANDY env vars stay
 as-is: `ANTHROPIC_BASE_URL/API_KEY/AUTH_TOKEN/MODEL`, `LDXHUB_API_KEY`,
 `ANTSEED_DATA_DIR`, `PAGEKITE_BIN/NAME`, `TMUX`, `TMUX_PANE`, `TERM`, `PATH`.
 
@@ -246,44 +247,44 @@ as-is: `ANTHROPIC_BASE_URL/API_KEY/AUTH_TOKEN/MODEL`, `LDXHUB_API_KEY`,
 
 | Python env var | TS env var | Used in (→ target file) |
 |---|---|---|
-| `ZIMZILLA_HOME` | `ANDY_HOME` | config, theme, sources, ldxhub, tokenharbour, openrouter, aihubmix, antseed, unorouter, opencode, phish (×2), `__main__` → 13 call sites |
-| `ZIMZILLA_ROOT` | `ANDY_ROOT` | `__main__._launcher_path` (checkout root for `packaging/zimzilla` launcher) |
-| `ZIMZILLA_MODEL` | `ANDY_MODEL` | `config.Config.fromEnv` (model override, checked before `ANTHROPIC_MODEL`) |
-| `ZIMZILLA_CLAUDE_SOURCE` | `ANDY_CLAUDE_SOURCE` | credential fallback in tokenharbour, openrouter, aihubmix, unorouter (defaults to `~/.claude` source file) |
-| `ZIMZILLA_SEARCH_BACKENDS` | `ANDY_SEARCH_BACKENDS` | websearch `_backend_order()` (comma list reordering the engine fallback) |
-| `ZIMZILLA_PANE_SESSION` | `ANDY_PANE_SESSION` | panes (`ENV_SESSION`), read in `__main__` (nested-tmux detection) |
-| `ZIMZILLA_NO_UPDATE` | `ANDY_NO_UPDATE` | `__main__` (skip launch-time update check) |
-| `ZIMZILLA_UPDATED` | `ANDY_UPDATED` | `__main__` (one-shot "updated" notice between runs) |
-| `ZIMZILLA_NO_PROXY` | `ANDY_NO_PROXY` | ui/app (line 2415 — bypass proxy env scrubbing) |
-| `ZIMZILLA_BIN_DIR` | `ANDY_BIN_DIR` | opencode `install_alias` (where the `opencode-andy` shim is installed) |
+| `ANDY_HOME` | `ANDY_HOME` | config, theme, sources, ldxhub, tokenharbour, openrouter, aihubmix, antseed, unorouter, zai, opencode, phish (×2), `__main__` |
+| `ANDY_ROOT` | `ANDY_ROOT` | `__main__._launcher_path` (checkout root for `packaging/andy` launcher) |
+| `ANDY_MODEL` | `ANDY_MODEL` | `config.Config.fromEnv` (model override, checked before `ANTHROPIC_MODEL`) |
+| `ANDY_CLAUDE_SOURCE` | `ANDY_CLAUDE_SOURCE` | credential fallback in tokenharbour, openrouter, aihubmix, unorouter, zai (defaults to `~/claude-source`) |
+| `ANDY_SEARCH_BACKENDS` | `ANDY_SEARCH_BACKENDS` | websearch `_backend_order()` (comma list reordering the engine fallback) |
+| `ANDY_PANE_SESSION` | `ANDY_PANE_SESSION` | panes (`ENV_SESSION`), read in `__main__` (nested-tmux detection) |
+| `ANDY_NO_UPDATE` | `ANDY_NO_UPDATE` | `__main__` (skip launch-time update check) |
+| `ANDY_UPDATED` | `ANDY_UPDATED` | `__main__` (one-shot "updated" notice between runs) |
+| `ANDY_NO_PROXY` | `ANDY_NO_PROXY` | ui/app (line 2415 — bypass proxy env scrubbing) |
+| `ANDY_BIN_DIR` | `ANDY_BIN_DIR` | opencode `install_alias` (where the `opencode-andy` shim is installed) |
 
 ### Filesystem paths
 
 | Python path | TS path |
 |---|---|
-| `~/.zimzilla` (default home) | `~/.andy` |
-| `~/.zimzilla/AGENTS.md` | `~/.andy/AGENTS.md` (doctrine for zim mode — findAgentsFile step 3) |
-| `~/.zimzilla/current-theme` | `~/.andy/current-theme` |
-| `~/.zimzilla/current-source` | `~/.andy/current-source` |
-| `~/.zimzilla/sessions/` | `~/.andy/sessions/` |
-| `~/.zimzilla/hunts/` | `~/.andy/hunts/` (hunt case dirs, `wave-N/findings|plans`) |
-| `~/.zimzilla/{tokenharbour,openrouter,unorouter,antseed,aihubmix,ldxhub}/source` | `~/.andy/<provider>/source` (profile files) |
-| `~/.zimzilla/opencode/` | `~/.andy/opencode/` (proxy pool state) |
-| `~/.zimzilla/panes/` (mailbox root under stateDir) | `~/.andy/panes/` |
-| `<root>/packaging/zimzilla` (launcher) | `<root>/packaging/andy` |
+| `~/.andy` (default home) | `~/.andy` |
+| `~/.andy/AGENTS.md` | `~/.andy/AGENTS.md` (doctrine for andy mode — findAgentsFile step 3) |
+| `~/.andy/current-theme` | `~/.andy/current-theme` |
+| `~/.andy/current-source` | `~/.andy/current-source` |
+| `~/.andy/sessions/` | `~/.andy/sessions/` |
+| `~/.andy/hunts/` | `~/.andy/hunts/` (hunt case dirs, `wave-N/findings|plans`) |
+| `~/.andy/{tokenharbour,openrouter,unorouter,antseed,aihubmix,ldxhub}/source` | `~/.andy/<provider>/source`; the TS-only Z.ai profile is `~/.andy/zai/source` |
+| `~/.andy/opencode/` | `~/.andy/opencode/` (proxy pool state) |
+| `~/.andy/panes/` (mailbox root under stateDir) | `~/.andy/panes/` |
+| `<root>/packaging/andy` (launcher) | `<root>/packaging/andy` |
 
 ### Identity / config strings
 
 | Python | TS |
 |---|---|
-| argparse `prog="zimzilla"`, `--version` string | `andy` (cli.ts) |
-| `Agent` identity prompt: "You are ZimZilla, a specialised agentic coding CLI created by ZIM (Mr-Destroyer)." | "You are Andy…" — keep the rest verbatim (porter of agent.ts owns final wording; it is prompt-sensitive) |
-| banner wordmark "ZIMZILLA" (ui/banner FONT render) | "ANDY" |
-| `ZimZillaApp` class | `AndyApp` |
-| tmux `TMUX_SOCKET = "zimzilla"`, `TMUX_SESSION = "zimzilla"` (panes) | `"andy"` / `"andy"` |
-| opencode `ALIAS = "opencode-zim"` | `"opencode-andy"` |
-| scope mode name `"zim"` (MODES key, `--mode zim`, `/mode zim`) | KEEP `"zim"` or rename to `"andy"` — **decision needed by cli.ts+config.ts porter together**; it is a persisted CLI value, not just display |
-| dotdir prose in help strings (`~/.zimzilla`) | `~/.andy` |
+| argparse `prog="andy"`, `--version` string | `andy` (cli.ts) |
+| `Agent` identity prompt | "You are Andy…" — keep the rest verbatim (agent.ts owns final wording; it is prompt-sensitive) |
+| banner wordmark "ANDY" (ui/banner FONT render) | "ANDY" |
+| `AndyApp` class | `AndyApp` |
+| tmux `TMUX_SOCKET = "andy"`, `TMUX_SESSION = "andy"` (panes) | `"andy"` / `"andy"` |
+| opencode `ALIAS = "opencode-andy"` | `"opencode-andy"` |
+| full-auto mode name | `"andy"` (MODES key, `--mode andy`, `/mode andy`) |
+| dotdir prose in help strings (`~/.andy`) | `~/.andy` |
 
 ---
 
@@ -293,7 +294,7 @@ Parallel lanes should take modules top-tier-first; a module may start once its
 imports are merged. "lazy" imports still block correctness — treat a lazy
 import as a soft edge (can be stubbed with a dynamic `import()` + interface).
 
-**Tier 0 — leaves (no zimzilla imports; fully parallel, 16 modules):**
+**Tier 0 — leaves (no andy imports; fully parallel, 16 modules):**
 `config`, `session`, `sandbox`, `websearch`, `scope`, `termbg`, `termcolors`,
 `crack`, `phish`, `osint`, `ldxhub`, `logfare`, `opencode`, `update`, `panes`,
 plus `shared.ts` (already written, extend only via the contracts above).
@@ -306,6 +307,9 @@ plus `shared.ts` (already written, extend only via the contracts above).
 `logfare` first (leaf), extract the provider contract, then all six in
 parallel; `sources` last within the family. Also Tier 2: `tools` (sandbox,
 websearch + lazy scope/ldxhub/panes).
+
+`zai.ts` is a post-port source and has no Python row; keep its `sources` import
+static and its back-reference dynamic, exactly like the other hosted providers.
 
 **Tier 3:** `agent` (config, tools, scope + lazy ldxhub/sources) — the
 contract heart; its porter finalises `AgentEvent` in shared.ts.
@@ -333,7 +337,7 @@ path; E is the largest by volume (ui/app.py alone is 6,268 lines).
 ## Verification of coverage
 
 At cutover (against tag `pre-andy-port`):
-`git ls-tree -r --name-only pre-andy-port -- zimzilla/ | wc -l` = **43
-files**; minus `zimzilla/__init__.py` and `zimzilla/ui/__init__.py`
+`git ls-tree -r --name-only pre-andy-port -- andy/ | wc -l` = **43
+files**; minus `andy/__init__.py` and `andy/ui/__init__.py`
 (rows 42–43, folded, not ported as modules) = **41 modules**, all present as
 rows 1–41 above. Every file on disk is accounted for exactly once.

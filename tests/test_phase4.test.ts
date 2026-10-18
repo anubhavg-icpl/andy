@@ -2,7 +2,7 @@
  * tests/test_phase4.test.ts — vitest port of tests/test_phase4.py.
  *
  * What this suite is: the phase-4 regression suite — identity, modes, the
- * zim/AGENTS.md doctrine search, web tools and their parsers, scope
+ * andy/AGENTS.md doctrine search, web tools and their parsers, scope
  * semantics, mode gating, terminal-background/theme handling, the /team
  * orchestrator, and the shipped default model. Every test is named for the
  * bug it pins.
@@ -14,7 +14,7 @@
  *    checks that went live in Python run under a dead `globalThis.fetch` —
  *    their assertions were already written to tolerate any non-scope outcome,
  *    and a blocked result is still distinguishable (meta.blocked).
- *  - ZimZilla → Andy renames applied to every string assertion (identity
+ *  - Andy → Andy renames applied to every string assertion (identity
  *    checks assert "Andy"), per the port's rename rules.
  *  - `team._waves` / `team._write_lock_hook` are module-private in the TS
  *    port (PORT-MAP: leading-underscore helpers are not exported), so the
@@ -63,7 +63,7 @@ import type { AgentEvent, ToolHook } from '../src/shared.js';
 // import fine (verified); only tsc needs the specifier kept opaque.
 
 // The launch-time-precedence test drives cli.main() to the point of mounting
-// the TUI — the same seam the Python test stubbed by patching ZimZillaApp.
+// the TUI — the same seam the Python test stubbed by patching AndyApp.
 // ink's render is neutered file-wide (real components still load via
 // importOriginal, so the dynamic .tsx imports elsewhere in this file are
 // untouched) and every launch records the cfg.theme AndyApp was handed.
@@ -90,7 +90,7 @@ function cfgFor(workdir: string, kw: Partial<Config> = {}): Config {
   return Config.fromEnv({ workdir, apiKey: 'x', baseUrl: 'http://localhost:4001', ...kw });
 }
 
-/** Pin $HOME for the duration of fn (the zim doctrine search reads ~ at call
+/** Pin $HOME for the duration of fn (the andy doctrine search reads ~ at call
  *  time via os.homedir, so this isolates it from the machine's dotfiles). */
 async function withHome<T>(home: string, fn: () => Promise<T> | T): Promise<T> {
   const saved = process.env['HOME'];
@@ -180,7 +180,7 @@ function stubModeAgent(mode: string, workdir: string) {
         null,
         toolMsg([
           { type: 'text', text: 'running' },
-          { type: 'tool_use', id: 't1', name: 'bash', input: { command: 'echo ZIMMODE_OK' } },
+          { type: 'tool_use', id: 't1', name: 'bash', input: { command: 'echo ANDYMODE_OK' } },
         ]),
       ];
       return;
@@ -237,9 +237,9 @@ afterAll(() => {
 // === SECTION === test_identity ===
 
 describe('test_identity', () => {
-  it('identity names Andy (renamed from ZimZilla) and disclaims other products', () => {
+  it('identity names Andy and disclaims other products', () => {
     const sp = new Agent(cfgFor(wd)).systemPrompt();
-    expect(sp.includes('Andy') && sp.includes('ZIM (Mr-Destroyer)'), 'identity names Andy').toBe(true);
+    expect(sp.includes('Andy'), 'identity names Andy').toBe(true);
     expect(sp.includes('NOT "Claude"'), 'identity disclaims other products').toBe(true);
   });
 
@@ -318,8 +318,8 @@ describe('test_mode_tools', () => {
     expect(!edits.has('bash') && edits.has('write_file'), 'edits mode hides bash only').toBe(true);
   });
 
-  it('zim/danger/uncensored modes expose everything', () => {
-    for (const mode of ['zim', 'danger', 'uncensored']) {
+  it('andy/danger/uncensored modes expose everything', () => {
+    for (const mode of ['andy', 'danger', 'uncensored']) {
       const n = names(mode);
       expect(['bash', 'write_file', 'edit_file'].every((t) => n.has(t)), `${mode} exposes everything`).toBe(true);
     }
@@ -327,12 +327,12 @@ describe('test_mode_tools', () => {
 
   it('all modes registered; the loud and full-auto sets are exactly right', () => {
     expect(new Set(Object.keys(MODES)), 'all modes registered').toEqual(
-      new Set(['auto', 'edits', 'plan', 'zim', 'danger', 'uncensored']),
+      new Set(['auto', 'edits', 'plan', 'andy', 'danger', 'uncensored']),
     );
     expect(
       new Set(Object.entries(MODES).filter(([, s]) => s.loud).map(([m]) => m)),
-      'zim/danger/uncensored are the armed (loud) modes',
-    ).toEqual(new Set(['zim', 'danger', 'uncensored']));
+      'andy/danger/uncensored are the armed (loud) modes',
+    ).toEqual(new Set(['andy', 'danger', 'uncensored']));
     const modesByString = MODES as Record<string, { auto: Set<string> }>;
     expect(
       ['auto', 'danger', 'uncensored'].every((m) =>
@@ -550,26 +550,26 @@ describe('test_web_tools', () => {
   });
 });
 
-// === SECTION === test_zim_agents ===
+// === SECTION === test_andy_agents ===
 
-describe('test_zim_agents', () => {
-  it('zim mode loads AGENTS.md', () => {
+describe('test_andy_agents', () => {
+  it('andy mode loads AGENTS.md', () => {
     const agentsPath = path.join(wd, 'AGENTS.md');
-    writeFileSync(agentsPath, '# OPERATOR DOCTRINE\nOBEY THE ZIM.\n');
-    const sp = new Agent(cfgFor(wd, { mode: 'zim', agentsPath })).systemPrompt();
-    expect(sp.includes('OBEY THE ZIM'), 'zim mode loads AGENTS.md').toBe(true);
+    writeFileSync(agentsPath, '# OPERATOR DOCTRINE\nOBEY THE ANDY.\n');
+    const sp = new Agent(cfgFor(wd, { mode: 'andy', agentsPath })).systemPrompt();
+    expect(sp.includes('OBEY THE ANDY'), 'andy mode loads AGENTS.md').toBe(true);
   });
 
-  it('zim mode without file falls back to the default prompt', async () => {
+  it('andy mode without file falls back to the default prompt', async () => {
     // A directory with no doctrine anywhere — including no ~/AGENTS.md, which
     // is why HOME is pinned to the temp tree for the duration.
     await withHome(mkdtempSync(path.join(tmpdir(), 'andy-bare-')), async () => {
       const bare = mkdtempSync(path.join(tmpdir(), 'andy-bare2-'));
-      const cfg = cfgFor(bare, { mode: 'zim' });
+      const cfg = cfgFor(bare, { mode: 'andy' });
       cfg.stateDir = path.join(bare, 'state'); // nothing installed there either
       expect(
         new Agent(cfg).systemPrompt().includes('Andy'),
-        'zim mode without file falls back',
+        'andy mode without file falls back',
       ).toBe(true);
     });
   });
@@ -580,7 +580,7 @@ describe('test_zim_agents', () => {
 describe('test_agents_search', () => {
   it('the doctrine search: workdir, parent, installed home, then ~', async () => {
     // The installed-home step is the point of the whole thing — it is what
-    // lets `andy --mode zim` run from a directory that has no AGENTS.md of
+    // lets `andy --mode andy` run from a directory that has no AGENTS.md of
     // its own.
     await withHome(mkdtempSync(path.join(tmpdir(), 'andy-nh-')), async () => {
       const root = mkdtempSync(path.join(tmpdir(), 'andy-search-'));
@@ -620,15 +620,15 @@ describe('test_agents_search', () => {
       ).toBe(path.join(sub, 'AGENTS.md'));
 
       // And the agent actually reads it, with no agents_path set at all.
-      const cfg = cfgFor(sub, { mode: 'zim' });
+      const cfg = cfgFor(sub, { mode: 'andy' });
       cfg.stateDir = home;
       expect(
         new Agent(cfg).systemPrompt().includes('SUBDIR DOCTRINE'),
-        'zim mode picks the doctrine up with no --agents',
+        'andy mode picks the doctrine up with no --agents',
       ).toBe(true);
 
       // A stale agents_path (file deleted since launch) falls back to the search.
-      const cfg2 = cfgFor(sub, { mode: 'zim', agentsPath: path.join(root, 'gone', 'AGENTS.md') });
+      const cfg2 = cfgFor(sub, { mode: 'andy', agentsPath: path.join(root, 'gone', 'AGENTS.md') });
       cfg2.stateDir = home;
       expect(
         new Agent(cfg2).systemPrompt().includes('SUBDIR DOCTRINE'),
@@ -837,14 +837,14 @@ describe('test_scope_semantics', () => {
 // === SECTION === test_mode_gating ===
 
 describe('test_mode_gating', () => {
-  // No shipped mode leaves bash merely gated: `auto`/`zim`/`danger` list it
+  // No shipped mode leaves bash merely gated: `auto`/`andy`/`danger` list it
   // in their `auto` set, `edits`/`plan` deny it outright. So `gated` is false
   // everywhere, and the observable difference is whether bash RUNS.
   const expected: Record<string, [boolean, boolean]> = {
     auto: [false, true],
     edits: [false, false],
     plan: [false, false],
-    zim: [false, true],
+    andy: [false, true],
     danger: [false, true],
     uncensored: [false, true],
   };
@@ -855,7 +855,7 @@ describe('test_mode_gating', () => {
       const results = events.filter((e) => e.type === 'tool_result');
       const out = results[0]?.type === 'tool_result' ? results[0].output : '';
       const gated = events.some((e) => e.type === 'tool_call' && e.gated);
-      const ran = out.includes('ZIMMODE_OK');
+      const ran = out.includes('ANDYMODE_OK');
       expect(gated, `${mode}: bash gated=${expGated}`).toBe(expGated);
       expect(ran, `${mode}: bash ran=${expRan}`).toBe(expRan);
     });
@@ -877,7 +877,7 @@ describe('test_mode_gating', () => {
       const results = events.filter((e) => e.type === 'tool_result');
       const out = results[0]?.type === 'tool_result' ? results[0].output : '';
       expect(
-        !out.includes('ZIMMODE_OK'),
+        !out.includes('ANDYMODE_OK'),
         `${mode}: armed does NOT re-enable denied bash`,
       ).toBe(true);
       expect(
@@ -948,7 +948,7 @@ describe('test_ui', () => {
     ).toBe(true);
   });
 
-  it.skip("ui: /mode zim via real keystrokes, @ mention expansion, /help screen — SKIP (port gap): the remaining Python pins drive Textual's pilot harness (app.run_test, query_one('#input'), keystroke replay, export_screenshot) against the app object: /mode switching mutates app.cfg.mode live, _expand_at_refs attaches file contents (a closure inside AndyApp, not exported), and /help is asserted off a rendered screenshot. The Ink port has no pilot/query_one harness and no screenshot surface; needs an Ink testing strategy (ink-testing-library is not in deps and installs are barred).", () => {});
+  it.skip("ui: /mode andy via real keystrokes, @ mention expansion, /help screen — SKIP (port gap): the remaining Python pins drive Textual's pilot harness (app.run_test, query_one('#input'), keystroke replay, export_screenshot) against the app object: /mode switching mutates app.cfg.mode live, _expand_at_refs attaches file contents (a closure inside AndyApp, not exported), and /help is asserted off a rendered screenshot. The Ink port has no pilot/query_one harness and no screenshot surface; needs an Ink testing strategy (ink-testing-library is not in deps and installs are barred).", () => {});
 });
 
 // === SECTION === test_ui_rails (fuzzy part portable; rails are not) ===
@@ -969,7 +969,7 @@ describe('test_ui_rails', () => {
     const ents = [
       { key: 'a', title: '/model', hint: 'switch model' },
       { key: 'b', title: '/mode', hint: 'switch mode' },
-      { key: 'c', title: '/zim-logfare', hint: 'upstream' },
+      { key: 'c', title: '/andy-logfare', hint: 'upstream' },
     ];
     expect(
       rank(ents, 'md')[0]![0].title,
@@ -1191,7 +1191,7 @@ describe('test_system_theme', () => {
   });
 
   it('launch-time precedence, through the real CLI (fresh/remembered/--theme/stale)', async () => {
-    // The Python original stubbed ZimZillaApp and drove __main__.main() to
+    // The Python original stubbed AndyApp and drove __main__.main() to
     // completion: everything up to the palette — argparse, the precedence,
     // Config.from_env — ran for real. Same here: main() runs for real, only
     // ink's render is captured (mock at the top of this file), so the theme
@@ -1248,7 +1248,7 @@ describe('test_system_theme', () => {
     });
   });
 
-  it.skip('theme: the app-palette block (opens in terminal colours, wallpaper re-read, /theme switching) — SKIP (port gap): the second half of the Python test drives the Textual pilot against a live ZimZillaApp (palette reactive, screen.styles.background, query_one("#transcript")); the Ink AndyApp keeps palette in React state with no introspection harness.', () => {});
+  it.skip('theme: the app-palette block (opens in terminal colours, wallpaper re-read, /theme switching) — SKIP (port gap): the second half of the Python test drives the Textual pilot against a live AndyApp (palette reactive, screen.styles.background, query_one("#transcript")); the Ink AndyApp keeps palette in React state with no introspection harness.', () => {});
 });
 
 // === SECTION === /team ===
@@ -1747,7 +1747,7 @@ describe('test_team_tool_hook', () => {
 });
 
 describe('test_team_ui', () => {
-  it.skip('team ui: /team through the app (marker in transcript, banked tokens, fallback) — SKIP (port gap): drives the Textual pilot against ZimZillaApp; the Ink AndyApp has no pilot/query_one harness.', () => {});
+  it.skip('team ui: /team through the app (marker in transcript, banked tokens, fallback) — SKIP (port gap): drives the Textual pilot against AndyApp; the Ink AndyApp has no pilot/query_one harness.', () => {});
 });
 
 // === SECTION === default model ===

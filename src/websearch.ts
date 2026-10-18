@@ -3,7 +3,7 @@
  * something that is not in the repository.
  *
  * What this module is: a CHAIN of key-free search backends (DuckDuckGo Lite →
- * 4get → Mwmbl → RightDao, port of zimzilla/websearch.py) plus a readable-text
+ * 4get → Mwmbl → RightDao, port of andy/websearch.py) plus a readable-text
  * page fetcher. Search is a chain rather than a single engine for a measured
  * reason: DDG Lite answers exactly two queries from one IP and then serves an
  * HTTP 202 anti-bot interstitial — `cc=botnet`, a form posting to
@@ -56,7 +56,7 @@ class ValueError extends Error {}
 // DDG Lite answers a bare default-agent request with an empty page, so
 // present as a browser.
 const USER_AGENT =
-  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 ' +
+  'Moandy/5.0 (X11; Linux x86_64) AppleWebKit/537.36 ' +
   '(KHTML, like Gecko) Chrome/124.0 Safari/537.36';
 
 /** The key-free endpoints, tried in whatever order backendOrder returns. */

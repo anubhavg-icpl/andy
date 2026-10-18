@@ -1,7 +1,7 @@
 /**
  * findings-panel.tsx — the hunt finding tracker window (FindingsPanel).
  *
- * What this module is: the Ink port of zimzilla/ui/app.py's FindingsPanel —
+ * What this module is: the Ink port of andy/ui/app.py's FindingsPanel —
  * a worst-first list of everything the engagement found, floating over the
  * shell. Invariants: it is a view, not a gate — escape (or /findings again,
  * which the app handles) closes it. While it is up the prompt underneath is

@@ -3,7 +3,7 @@
 //
 // The Python original drove the real Textual app through app.run_test(); Ink
 // has no pilot harness in this repo's deps, so the port drives the REAL
-// command handlers (cmdModel / cmdZimSource) through a fake AppCtx — the same
+// command handlers (cmdModel / cmdAndySource) through a fake AppCtx — the same
 // seam the component itself uses — with the real sources/config modules and
 // per-gateway wrappers standing in for Python's mock.patch.object. The
 // regression being pinned is in the handler's logic, which runs unmodified.
@@ -34,7 +34,7 @@ type Tokenharbour = typeof import('../src/tokenharbour.js');
  */
 interface ModelCommands {
   cmdModel(ctx: AppCtxLike, args: string[]): void;
-  cmdZimSource(ctx: AppCtxLike, key: string | null): void;
+  cmdAndySource(ctx: AppCtxLike, key: string | null): void;
 }
 
 /** The slice of AppCtx the two commands under test touch. */
@@ -371,10 +371,10 @@ describe('model_switch', () => {
   });
 
   it('test_a_retired_stored_model_is_replaced_on_switch', async () => {
-    // /zim-logfare takes the model from ANTHROPIC_MODEL in the stored profile,
+    // /andy-logfare takes the model from ANTHROPIC_MODEL in the stored profile,
     // which can name a model the upstream has since retired. The switch is
     // already paying for a round-trip, so verifyModelFor checks there — reached
-    // through the real cmdZimSource with a fabricated source.
+    // through the real cmdAndySource with a fabricated source.
     const live = [modelEntry('deepseek-v4.1-flash'), modelEntry('mimo-v2.6-flash')];
     const lfStub = {
       ...lf,
@@ -421,7 +421,7 @@ describe('model_switch', () => {
       ldxhub: quietGateway(),
     }, cfg);
 
-    mc.cmdZimSource(h.ctx, 'logfare');
+    mc.cmdAndySource(h.ctx, 'logfare');
     await settle();
     check('switch: a retired stored model is replaced by the default',
       cfg.model === 'deepseek-v4.1-flash', cfg.model);
@@ -431,7 +431,7 @@ describe('model_switch', () => {
     // A model still served is kept unchanged.
     profile['ANTHROPIC_MODEL'] = 'mimo-v2.6-flash';
     cfg.model = 'old';
-    mc.cmdZimSource(h.ctx, 'logfare');
+    mc.cmdAndySource(h.ctx, 'logfare');
     await settle();
     check('switch: a model still served is kept unchanged',
       cfg.model === 'mimo-v2.6-flash', cfg.model);
@@ -441,7 +441,7 @@ describe('model_switch', () => {
       async () => [null, 'boom'] as [null, string]);
     profile['ANTHROPIC_MODEL'] = 'deepseek-v3.2';
     cfg.model = 'old';
-    mc.cmdZimSource(h.ctx, 'logfare');
+    mc.cmdAndySource(h.ctx, 'logfare');
     await settle();
     check('switch: a failed fetch leaves the stored name alone',
       cfg.model === 'deepseek-v3.2', cfg.model);
@@ -450,7 +450,7 @@ describe('model_switch', () => {
     discoverable = { tokenjuice: tokenjuiceSrc };
     profile['ANTHROPIC_MODEL'] = 'anything';
     cfg.model = 'old';
-    mc.cmdZimSource(h.ctx, 'tokenjuice');
+    mc.cmdAndySource(h.ctx, 'tokenjuice');
     await settle();
     check('switch: a non-Logfare source is never second-guessed',
       cfg.model === 'anything', cfg.model);

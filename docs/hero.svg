@@ -65,7 +65,7 @@
     <rect class="cur" x="908" y="321" width="10" height="19" fill="#f2a56b"/>
 
     <text class="meta" x="640" y="378" text-anchor="middle">streaming · tool-using · scope-aware · session-kept</text>
-    <text class="meta" x="640" y="406" text-anchor="middle" opacity="0.85">by Mr-Destroyer / ZIM</text>
+    <text class="meta" x="640" y="406" text-anchor="middle" opacity="0.85">by Andy</text>
 
     <!-- corner ticks: the terminal frame hinted, not drawn -->
     <g stroke="#5c6470" stroke-width="2" opacity="0.8">

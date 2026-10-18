@@ -7,7 +7,7 @@
  * and the live catalog (free by `:free` suffix OR zero price; a failed fetch
  * returns an error rather than raising, because the caller is a TUI command).
  *
- * The Python suite pinned the module's paths by setting ZIMZILLA_HOME and
+ * The Python suite pinned the module's paths by setting ANDY_HOME and
  * re-importing; the TS equivalent sets ANDY_HOME / ANDY_CLAUDE_SOURCE and
  * takes a fresh module instance via vi.resetModules() + dynamic import
  * (PROFILE and CLAUDE_SOURCE are computed at module load). Private helpers

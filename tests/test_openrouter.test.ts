@@ -571,7 +571,7 @@ describe('openrouter', () => {
  *  patched o.PROFILE / o.CLAUDE_SOURCE mid-test; the TS port froze those as
  *  import-time consts, so the same isolation is a module-registry reset plus
  *  a fresh dynamic import — the exact manoeuvre Python's main() used to pin
- *  ZIMZILLA_HOME before the first import. */
+ *  ANDY_HOME before the first import. */
 async function freshOpenrouter(): Promise<Or> {
   vi.resetModules();
   return await import('../src/openrouter.js');

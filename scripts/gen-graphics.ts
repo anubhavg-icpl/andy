@@ -138,7 +138,7 @@ function hero(): string {
     <rect class="cur" x="${W / 2 + 268}" y="321" width="10" height="19" fill="${EMBER_SOFT}"/>
 
     <text class="meta" x="${W / 2}" y="378" text-anchor="middle">streaming · tool-using · scope-aware · session-kept</text>
-    <text class="meta" x="${W / 2}" y="406" text-anchor="middle" opacity="0.85">by Mr-Destroyer / ZIM</text>
+    <text class="meta" x="${W / 2}" y="406" text-anchor="middle" opacity="0.85">by Andy</text>
 
     <!-- corner ticks: the terminal frame hinted, not drawn -->
     <g stroke="${DIM}" stroke-width="2" opacity="0.8">

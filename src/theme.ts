@@ -1,5 +1,5 @@
 /**
- * theme.ts — hacker themes for the TUI. (port of zimzilla/theme.py)
+ * theme.ts — hacker themes for the TUI. (port of andy/theme.py)
  *
  * What this module is: the colour system. Three fixed variants, each a tight
  * palette so the whole UI reads as one neon system — no stray colors anywhere.
@@ -65,7 +65,7 @@ export class Palette {
 
 export const PALETTES: Record<string, Palette> = {
   ink: new Palette({
-    name: 'zim-ink',
+    name: 'andy-ink',
     bg: '#000000',
     primary: '#ece9e4',
     dim: '#5c6470',
@@ -75,7 +75,7 @@ export const PALETTES: Record<string, Palette> = {
     glow: '#ece9e4',
   }),
   green: new Palette({
-    name: 'zim-green',
+    name: 'andy-green',
     bg: '#000000',
     primary: '#00ff41',
     dim: '#1f6f3a',
@@ -85,7 +85,7 @@ export const PALETTES: Record<string, Palette> = {
     glow: '#00ff41',
   }),
   amber: new Palette({
-    name: 'zim-amber',
+    name: 'andy-amber',
     bg: '#000000',
     primary: '#ffb000',
     dim: '#8a6220',
@@ -95,7 +95,7 @@ export const PALETTES: Record<string, Palette> = {
     glow: '#ffb000',
   }),
   cyan: new Palette({
-    name: 'zim-cyan',
+    name: 'andy-cyan',
     bg: '#000000',
     primary: '#00ffd5',
     dim: '#1b7f7a',
@@ -105,7 +105,7 @@ export const PALETTES: Record<string, Palette> = {
     glow: '#00ffd5',
   }),
   violet: new Palette({
-    name: 'zim-violet',
+    name: 'andy-violet',
     bg: '#000000',
     primary: '#bd5cff',
     dim: '#5f2f91',
@@ -147,7 +147,7 @@ export function systemPalette(colors?: TerminalColors | null): Palette {
 
   const primary = colors.fg ?? base.primary;
   return new Palette({
-    name: 'zim-system',
+    name: 'andy-system',
     // `.bg`, not `.darkBg`: a system palette is readable on a light terminal
     // because its text colour came from the same place. The three fixed
     // palettes are the ones that must refuse light, and they still do.

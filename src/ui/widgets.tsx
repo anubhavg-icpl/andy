@@ -1,21 +1,21 @@
 /**
  * widgets.tsx — layout widgets: header, chat pane, status bar (port of
- * zimzilla/ui/widgets.py).
+ * andy/ui/widgets.py).
  *
  * What this module is: the four fixed chrome pieces of the app — PromptInput
  * (the paste-retaining prompt field), HeaderBar, ChatPane (transcript + live
- * slots), StatusBar — plus ZimPane, the /phish and /bug-hunt campaign rail.
+ * slots), StatusBar — plus AndyPane, the /phish and /bug-hunt campaign rail.
  *
  * Invariants:
  *  - PromptInput keeps a WHOLE paste: line breaks are stored as real
  *    newlines so the model receives the text as written, and only the display
  *    folds them to NEWLINE_GLYPH.
- *  - ChatPane and ZimPane are driven through imperative handles (the PORT-MAP
+ *  - ChatPane and AndyPane are driven through imperative handles (the PORT-MAP
  *    §3 mapping for Textual's query_one + reactive writes); HeaderBar,
  *    StatusBar and PromptInput are pure props.
  *  - Ink throws on bare string children of <Box>, so every line break
  *    between styled rides inside a <Text> run.
- *  - Rename rule applied: identity strings are ANDY (was ZIMZILLA/ZIM).
+ *  - Rename rule applied: identity strings are ANDY (was ANDY/ANDY).
  */
 
 import { forwardRef, Fragment, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
@@ -299,7 +299,7 @@ export function HeaderBar(props: HeaderBarProps): ReactNode {
   const limit = columns || 200;
 
   const m = (MODES as Record<string, { label?: string; loud?: boolean }>)[mode] ?? {};
-  // Modes marked "loud" (zim, danger, uncensored) are the armed states —
+  // Modes marked "loud" (andy, danger, uncensored) are the armed states —
   // shout them.
   const loud = m.loud === true;
   const label = m.label ?? mode.toUpperCase();
@@ -676,7 +676,7 @@ export function WelcomeHint(props: WelcomeHintProps): ReactNode {
   );
 }
 
-// === SECTION === ZimPane (campaign rail) ===
+// === SECTION === AndyPane (campaign rail) ===
 
 /** One engine event off the phish campaign queue. */
 export interface PaneEvent {
@@ -696,7 +696,7 @@ interface HuntAgentState {
   index: number;
 }
 
-export interface ZimPaneHandle {
+export interface AndyPaneHandle {
   showCampaign(host: string): void;
   showHunt(target: string, size?: number): void;
   /** Apply one hunt event and repaint. */
@@ -712,7 +712,7 @@ export interface ZimPaneHandle {
   applyPalette(palette: Palette): void;
 }
 
-export interface ZimPaneProps {
+export interface AndyPaneProps {
   palette: Palette;
 }
 
@@ -759,7 +759,7 @@ function clip(text: string, limit: number): string {
  * the glyphs remain as labels and the actions ride on the handle for the
  * app's key bindings; width stays at the default column.
  */
-export const ZimPane = forwardRef<ZimPaneHandle, ZimPaneProps>(function ZimPane(props, ref) {
+export const AndyPane = forwardRef<AndyPaneHandle, AndyPaneProps>(function AndyPane(props, ref) {
   const [palette, setPalette] = useState(props.palette);
   // Which campaign the pane is showing: "phish" or "hunt". The two views
   // share the chrome (minimize, close) and nothing else, so a hunt never

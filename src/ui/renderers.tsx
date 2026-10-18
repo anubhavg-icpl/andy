@@ -1,5 +1,5 @@
 /**
- * renderers.tsx — transcript panel and line builders (port of zimzilla/ui/renderers.py).
+ * renderers.tsx — transcript panel and line builders (port of andy/ui/renderers.py).
  *
  * What this module is: every fixed-shape transcript block — tool panels, diffs,
  * user prompts, errors, reasoning, team-worker lines, findings — built as pure
@@ -12,7 +12,7 @@
  *  - The severity colour lives HERE once (SEVERITY_PALETTE/severityStyle): the
  *    findings panel and the campaign rail share it, so a CRITICAL cannot read
  *    red in one place and amber in the other.
- *  - Rename rule applied: the banner wordmark is ANDY (was ZIMZILLA).
+ *  - Rename rule applied: the banner wordmark is ANDY (was ANDY).
  */
 
 import type { ReactNode } from 'react';

@@ -1,5 +1,5 @@
 /**
- * index.ts — package surface for `andy`. (port of zimzilla/__init__.py)
+ * index.ts — package surface for `andy`. (port of andy/__init__.py)
  *
  * What this module is: the library entry. The Python package marker only
  * exported `__version__`; the TS package additionally re-exports the stable

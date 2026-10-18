@@ -1,6 +1,6 @@
 /**
  * logfare.ts — Logfare's live catalog: what the upstream serves *right now*.
- * (port of zimzilla/logfare.py)
+ * (port of andy/logfare.py)
  *
  * What this module is: the fetched, not declared, model list for the default
  * upstream. Logfare's model line-up moves faster than this repo does — a list

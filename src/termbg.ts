@@ -1,6 +1,6 @@
 /**
  * termbg.ts — ask the terminal what colour its background is (OSC 11).
- * (port of zimzilla/termbg.py)
+ * (port of andy/termbg.py)
  *
  * What this module is: the raw-mode tty query primitive every OSC query in
  * this package goes through. A terminal emulator paints its padding — the

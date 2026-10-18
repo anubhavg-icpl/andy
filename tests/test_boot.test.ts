@@ -355,21 +355,21 @@ describe('test_wiring_spins_then_settles', () => {
     try {
       // Walk the banner phase, collecting what the widget was shown. Phase
       // marker: the boot screen renders the SYSTEM CHECK header in every
-      // phase, but the author credits only appear once the banner is done
+      // phase, but the identity line only appear once the banner is done
       // (boot.tsx gates them on `phase !== 'banner'`), so "has credits" is
       // the honest "past the banner" signal.
       const deadline = Date.now() + 8_000;
       while (Date.now() < deadline) {
-        const past = frames.some(f => f.plain.includes('Mr-Destroyer'));
+        const past = frames.some(f => f.plain.includes('identity'));
         if (past && frames.length > 4) break;
         await sleep(40);
       }
-      const bannerFrames = frames.filter(f => !f.plain.includes('Mr-Destroyer'));
+      const bannerFrames = frames.filter(f => !f.plain.includes('identity'));
       const seen = bannerFrames
         .map(emblemPicture)
         .filter((p): p is string[] => p !== null)
         .map(p => p.join('\n'));
-      const after = frames.filter(f => f.plain.includes('Mr-Destroyer'));
+      const after = frames.filter(f => f.plain.includes('identity'));
 
       // The banner phase ends within a sane number of ticks.
       expect(after.length).toBeGreaterThan(0);
@@ -414,9 +414,9 @@ describe('test_wiring_styles_the_frame_as_a_unit', () => {
       let litRaw: string[] | null = null;
       while (Date.now() < deadline && (narrowRaw === null || litRaw === null)) {
         for (const f of frames) {
-          // The spin belongs to the banner phase; once the credits are up the
+          // The spin belongs to the banner phase; once the identity line are up the
           // mark has settled (boot.tsx: `phase !== 'banner' ? EMBLEM : spin`).
-          if (f.plain.includes('Mr-Destroyer')) continue;
+          if (f.plain.includes('identity')) continue;
           const pic = emblemPicture(f);
           if (pic === null) continue;
           const rawRows = f.raw.split('\n').filter(l => {
@@ -469,10 +469,10 @@ describe('test_wiring_reaches_done', () => {
       expect(doneAt).toBeGreaterThan(0);
       // banner -> checks -> fade -> done, in order. 'SYSTEM CHECK' cannot
       // mark the checks phase here (the header renders in every phase), so
-      // the credits — gated on `phase !== 'banner'` in boot.tsx — do.
-      const iChecks = frames.findIndex(f => f.plain.includes('Mr-Destroyer'));
+      // the identity line — gated on `phase !== 'banner'` in boot.tsx — do.
+      const iChecks = frames.findIndex(f => f.plain.includes('identity'));
       expect(iChecks).toBeGreaterThan(0);
-      expect(frames[0]!.plain.includes('Mr-Destroyer')).toBe(false); // banner first
+      expect(frames[0]!.plain.includes('identity')).toBe(false); // banner first
       const iDone = frames.findIndex(f => f.plain.includes('SHELL READY'));
       expect(iDone).toBeGreaterThan(iChecks);
 

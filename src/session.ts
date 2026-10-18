@@ -1,6 +1,6 @@
 /**
  * session.ts — session persistence: save / load / list conversation state.
- * (port of zimzilla/session.py)
+ * (port of andy/session.py)
  *
  * What this module is: the ~/.andy/sessions JSON store behind /save, /resume,
  * /sessions and the --resume launch flag.

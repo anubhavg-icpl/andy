@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# start-litellm.sh — run the LiteLLM translation proxy for ZimZilla.
+# start-litellm.sh — run the LiteLLM translation proxy for Andy.
 #
-#   ZimZilla (Anthropic /v1/messages) --▶ LiteLLM :4001 --▶ Logfare (OpenAI)
+#   Andy (Anthropic /v1/messages) --▶ LiteLLM :4001 --▶ Logfare (OpenAI)
 #
 # Usage:  ./start-litellm.sh [start|stop|restart|status|logs|help]
 #
@@ -19,7 +19,7 @@ _self_dir="$(cd -- "$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")" && pw
 ENV_FILE="${LITELLM_ENV_FILE:-$_self_dir/source}"
 CONFIG="${LITELLM_CONFIG:-$_self_dir/litellm-config.yaml}"
 PORT="${LITELLM_PORT:-4001}"
-PID_FILE="${LITELLM_PID_FILE:-/tmp/litellm-zim.pid}"
+PID_FILE="${LITELLM_PID_FILE:-/tmp/litellm-andy.pid}"
 # Bind loopback by default. litellm's own default is 0.0.0.0, which on a laptop
 # means every other machine on the network can reach the proxy and spend the
 # Logfare key. The harness only ever talks to it over localhost (the profile's
@@ -32,7 +32,7 @@ HOST="${LITELLM_HOST:-127.0.0.1}"
 # with "module 'logging' has no attribute '/tmp/...'". The log-file path lives
 # in LITELLM_LOGFILE. A path-valued LITELLM_LOG is still accepted for
 # backwards compatibility, but is stripped before litellm is launched.
-LOG="${LITELLM_LOGFILE:-/tmp/litellm-zim.log}"
+LOG="${LITELLM_LOGFILE:-/tmp/litellm-andy.log}"
 if [[ "${LITELLM_LOG:-}" == */* ]]; then
   LOG="$LITELLM_LOG"
   unset LITELLM_LOG
@@ -45,8 +45,8 @@ if [[ -z "${LITELLM_BIN:-}" ]]; then
 fi
 if [[ -z "$LITELLM_BIN" ]]; then
   for _c in "$HOME/.local/bin/litellm" \
-            "${ZIMZILLA_HOME:-$HOME/.zimzilla}/venv/bin/litellm" \
-            "$HOME/.zimzilla/venv/bin/litellm" "$HOME/venv/bin/litellm"; do
+            "${ANDY_HOME:-$HOME/.andy}/venv/bin/litellm" \
+            "$HOME/.andy/venv/bin/litellm" "$HOME/venv/bin/litellm"; do
     [[ -x "$_c" ]] && LITELLM_BIN="$_c" && break
   done
 fi

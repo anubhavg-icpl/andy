@@ -2,7 +2,7 @@
  * crack.ts — `/crack`: offline password cracking, and the honest arithmetic it runs on.
  *
  * What this module is: the engine behind the /crack command (ported from
- * zimzilla/crack.py). Cracking is one sequential job that saturates every
+ * andy/crack.py). Cracking is one sequential job that saturates every
  * core — the opposite shape of a wave campaign — so it is a command with a
  * playbook: it opens a case directory, hands the agent a briefing as one
  * turn, and the ordinary loop does the rest.

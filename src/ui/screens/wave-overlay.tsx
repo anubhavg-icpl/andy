@@ -1,7 +1,7 @@
 /**
  * wave-overlay.tsx — the wave view: panes around a tracker rail (WaveOverlay).
  *
- * What this module is: the Ink port of zimzilla/ui/app.py's WaveOverlay — the
+ * What this module is: the Ink port of andy/ui/app.py's WaveOverlay — the
  * full-screen hunt visualiser for the duration of a wave. Invariants: the
  * drawing itself lives in ui/web.tsx (WaveWeb); this screen owns the repaint
  * timer, the size it paints at, and the keys. The repaint is timer-driven

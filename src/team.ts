@@ -1,7 +1,7 @@
 /**
  * team.ts — `/team`: fan a task out across parallel agents.
  *
- * What this module is: the /team orchestrator (port of zimzilla/team.py). The
+ * What this module is: the /team orchestrator (port of andy/team.py). The
  * main brain reads the task, decides how many workers it needs and what each
  * one owns, runs them concurrently in ownership waves, and hands the results
  * to the caller for synthesis. The shape is a star: workers report to the
@@ -601,7 +601,7 @@ export async function runTeam(
   const maxAgents = opts.maxAgents ?? TEAM_MAX_AGENTS;
 
   // ---- plan. Read-only, so planning cannot start doing the work itself
-  // when the session is in zim or danger mode.
+  // when the session is in andy or danger mode.
   const planCfg = copyConfig(cfg, { mode: 'plan' });
   const planner = agentFactory(planCfg);
   const planText = await collectText(planner, plannerPrompt(task, maxAgents));

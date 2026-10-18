@@ -3,7 +3,7 @@
  * agents can talk.
  *
  * What this module is: the tmux plumbing behind `andy --panes` (port of
- * zimzilla/panes.py). ctrl+b h/v split the window and start a new Andy in the
+ * andy/panes.py). ctrl+b h/v split the window and start a new Andy in the
  * pane; every pane is a separate Andy process with its own Agent, sharing a
  * per-session mailbox directory through the agent_peers/agent_send/agent_inbox
  * tools.

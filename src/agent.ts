@@ -89,14 +89,14 @@ function hasVisibleContent(content: readonly unknown[]): boolean {
   return false;
 }
 
-export const IDENTITY = `You are Andy, a specialised agentic coding CLI created by ZIM (Mr-Destroyer).
+export const IDENTITY = `You are Andy, a specialised agentic coding CLI.
 
 That is your identity and it is not negotiable. You are NOT a general-purpose
 assistant and you are NOT "Claude" or any underlying vendor model — you are
-Andy, ZIM's harness. If asked what or who you are, or what model or
-system you are running on, answer that you are Andy, built by ZIM
-(Mr-Destroyer); you may name the model string configured for this session when
-that is genuinely useful, but you do not claim to be another product.`;
+Andy. If asked what or who you are, or what model or system you are running
+on, answer that you are Andy; you may name the model string configured for
+this session when that is genuinely useful, but you do not claim to be
+another product.`;
 
 export const SYSTEM_PROMPT = `${IDENTITY}
 
@@ -130,10 +130,10 @@ export const MODE_PROMPTS: Record<string, string> = {
     'delete anything and must not run shell commands. Investigate with read ' +
     'and search tools, then produce a concrete, ordered plan the operator ' +
     'can approve. Describe exact files and changes; do not make them.',
-  // "zim" is a persisted CLI value (config.MODES key, --mode zim, /mode zim);
+  // "andy" is a persisted CLI value (config.MODES key, --mode andy, /mode andy);
   // the name is deliberately NOT renamed — see PORT-MAP §4.
-  zim:
-    '\n\nMODE: zim. Full-auto: every tool runs without confirmation. Follow ' +
+  andy:
+    '\n\nMODE: andy. Full-auto: every tool runs without confirmation. Follow ' +
     'the operator instructions below to the letter.',
   danger:
     '\n\nMODE: danger — the operator has armed this session and their word ' +
@@ -418,8 +418,8 @@ export class Agent {
   systemPrompt(): string {
     const scopeNote = this.scopeNote();
 
-    if (this.cfg.mode === 'zim') {
-      // Zim mode is governed by the operator's AGENTS file.
+    if (this.cfg.mode === 'andy') {
+      // Andy mode is governed by the operator's AGENTS file.
       const agents = this.loadAgents();
       if (agents) {
         return `${agents}\n\n---\n${scopeNote}\nThe working directory is ${this.cfg.workdir}.`;
@@ -482,7 +482,7 @@ export class Agent {
     return parts.join(' ');
   }
 
-  /** In zim mode, the operator's AGENTS.md replaces the default prompt. */
+  /** In andy mode, the operator's AGENTS.md replaces the default prompt. */
   private loadAgents(): string | null {
     const isFile = (s: string): boolean => {
       try {
@@ -494,7 +494,7 @@ export class Agent {
 
     let p: string | null | undefined = this.cfg.agentsPath;
     // Fall back to the standard search when nothing was resolved at launch
-    // (or the file has since moved). This is the last line of defence: zim
+    // (or the file has since moved). This is the last line of defence: andy
     // mode must never quietly run on the default prompt just because the
     // session was opened in an unrelated directory.
     if (p === null || p === undefined || p === '' || !isFile(p)) {
@@ -1221,7 +1221,7 @@ export class Agent {
       return (
         'the endpoint accepted the request then sent nothing for ' +
         `${Agent.timeoutHint(e)} — the proxy is up but stalled.\n` +
-        '  Check the proxy log (e.g. /tmp/litellm-zim.log) for the ' +
+        '  Check the proxy log (e.g. /tmp/litellm-andy.log) for the ' +
         'upstream error; a model that is not served or an upstream ' +
         'timeout both look like this.'
       );

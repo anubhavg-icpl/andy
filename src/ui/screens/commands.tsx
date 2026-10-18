@@ -3,7 +3,7 @@
  * passed ~3k lines).
  *
  * What this module is: /help /mode /clear /cost /limits /scope /rain /think
- * /theme /save /load /compact /panes /zim-opencode — the commands that read or
+ * /theme /save /load /compact /panes /andy-opencode — the commands that read or
  * switch harness state rather than start a campaign. Invariant: every handler
  * receives the AppCtx seam (live refs, never stale copies) and mutates widget
  * state only through it; none of these starts a turn on the main agent except
@@ -22,7 +22,7 @@ export function cmdHelp(ctx: AppCtx, _args?: string[]): void {
   const m = ctx.mods();
   const rows: [string, string][] = [
     ['/help', 'this help'],
-    ['/mode [name]', 'switch mode: auto | edits | plan | zim | danger | uncensored'],
+    ['/mode [name]', 'switch mode: auto | edits | plan | andy | danger | uncensored'],
     ['/clear', 'wipe the transcript and conversation history'],
     ['/model [name]', 'show or switch the model'],
     ['/cost', 'session token and cost breakdown'],
@@ -30,14 +30,15 @@ export function cmdHelp(ctx: AppCtx, _args?: string[]): void {
     ['/rain', 'toggle the matrix-rain background'],
     ['/think', "toggle showing the model's own reasoning"],
     ['/theme green|amber|cyan|system', 'switch the color theme'],
-    ['/zim-logfare', 'switch upstream to Logfare        (:4001)'],
-    ['/zim-tokenjuice', 'switch upstream to Token Juice    (:4000)'],
-    ['/zim-tokenharbour', 'switch upstream to TokenHarbour (hosted)'],
-    ['/zim-openrouter', 'switch upstream to OpenRouter   (hosted)'],
-    ['/zim-unorouter', 'switch upstream to UnoRouter    (hosted, free models)'],
-    ['/zim-aihubmix', 'switch upstream to AIHubMix     (hosted, free models)'],
-    ['/zim-antseed', 'switch upstream to AntSeed (local buyer, free peers)'],
-    ['/zim-source', 'show upstream sources and their status'],
+    ['/andy-logfare', 'switch upstream to Logfare        (:4001)'],
+    ['/andy-tokenjuice', 'switch upstream to Token Juice    (:4000)'],
+    ['/andy-tokenharbour', 'switch upstream to TokenHarbour (hosted)'],
+    ['/andy-openrouter', 'switch upstream to OpenRouter   (hosted)'],
+    ['/andy-unorouter', 'switch upstream to UnoRouter    (hosted, free models)'],
+    ['/andy-aihubmix', 'switch upstream to AIHubMix     (hosted, free models)'],
+    ['/andy-zai', 'switch upstream to Z.ai          (GLM Coding Plan)'],
+    ['/andy-antseed', 'switch upstream to AntSeed (local buyer, free peers)'],
+    ['/andy-source', 'show upstream sources and their status'],
     ['/tokenharbour-api-setup <key>', 'store your TokenHarbour API key'],
     ['/tokenharbour-models', 'fetch the live catalog; show what is free'],
     ['/openrouter-api-setup [key]', 'store your OpenRouter API key (optional)'],
@@ -45,13 +46,15 @@ export function cmdHelp(ctx: AppCtx, _args?: string[]): void {
     ['/unorouter-models', 'the live free catalog — what is free and usable'],
     ['/aihubmix-api-setup [key]', 'store your AIHubMix API key (optional)'],
     ['/aihubmix-models', 'the live free catalog — what is free and usable'],
+    ['/zai-api-setup [key]', 'store your Z.ai Coding Plan API key (optional)'],
+    ['/zai-models', 'the GLM Coding Plan model registry'],
     ['/antseed-models', "AntSeed's free models, and the peer to pin"],
     ['/models', 'free models of an upstream — /models [source]'],
     ['/logfare-models', 'fetch the live catalog; show what is up'],
     ['/ldxhub-api-setup [key]', 'store your LDXHub API key (document jobs)'],
     ['/ldxhub-models [service]', 'LDXHub models/engines — pick the default per service'],
     ['/panes', 're-open this session under tmux — ctrl+b h/v split'],
-    ['/zim-opencode', 'open opencode behind a fresh rotating IP'],
+    ['/andy-opencode', 'open opencode behind a fresh rotating IP'],
     ['/save [name]', 'write the session to disk'],
     ['/load [name]', 'restore a saved session'],
     ['/compact', 'summarise history to free context'],
@@ -121,9 +124,9 @@ export function setMode(ctx: AppCtx, name: string): void {
   ctx.cfg.mode = name;
   a.setMode(name);
   ctx.updateHeader({ mode: name });
-  if (name === 'zim') {
+  if (name === 'andy') {
     // Re-resolve rather than trusting the launch-time value: a session started
-    // in one directory and switched to zim from another would otherwise arm
+    // in one directory and switched to andy from another would otherwise arm
     // with no file at all. An explicit --agents path is never overridden.
     if (ctx.cfg.agentsPath === null || !fsSync.existsSync(ctx.cfg.agentsPath)) {
       const found = m.config.findAgentsFile(ctx.cfg.workdir, ctx.cfg.stateDir);
@@ -131,9 +134,9 @@ export function setMode(ctx: AppCtx, name: string): void {
     }
     const src = ctx.cfg.agentsPath;
     if (src) {
-      ctx.sysLine(`ZIM MODE ARMED — following ${src} · full auto`, true);
+      ctx.sysLine(`ANDY MODE ARMED — following ${src} · full auto`, true);
     } else {
-      ctx.sysLine('ZIM MODE ARMED — no AGENTS.md found (set --agents PATH)', true);
+      ctx.sysLine('ANDY MODE ARMED — no AGENTS.md found (set --agents PATH)', true);
     }
   } else if (name === 'danger') {
     ctx.sysLine(
@@ -177,7 +180,7 @@ export function cmdMode(ctx: AppCtx, args: string[]): void {
           {'  AGENT MODE\n\n'}
         </Text>
         {modes}
-        {ctx.cfg.mode === 'zim' ? (
+        {ctx.cfg.mode === 'andy' ? (
           <Box>
             <Text color={p.dim}>{'\n  following  '}</Text>
             <Text color={p.primary}>
@@ -586,11 +589,11 @@ export function cmdPanes(ctx: AppCtx): void {
   }
 }
 
-export function cmdZimOpencode(ctx: AppCtx, args: string[]): void {
+export function cmdAndyOpencode(ctx: AppCtx, args: string[]): void {
   const m = ctx.mods();
   if (!m) return;
   void (async () => {
-    // /zim-opencode [--model <id>] [--refresh] [-- <opencode args>]
+    // /andy-opencode [--model <id>] [--refresh] [-- <opencode args>]
     //
     // Opens opencode behind a rotating IP, with no account and no key: its
     // free models are reachable anonymously, and the only obstacle is that
@@ -641,7 +644,7 @@ export function cmdZimOpencode(ctx: AppCtx, args: string[]): void {
     // there are says nothing useful, and an address that has not been proven
     // yet is noise at best. Only the phases are shown; the proxy is named once
     // it works.
-    ctx.sysLine('ZIM IS MAKING IT UNLIMITED - FINDING THE BEST PROXIES ...', true);
+    ctx.sysLine('ANDY IS MAKING IT UNLIMITED - FINDING THE BEST PROXIES ...', true);
     ctx.setHuntSpinner(true);
     let proxy = null as ReturnType<typeof m.opencode.findWorkingProxy>[0];
     let note = '';
@@ -667,7 +670,7 @@ export function cmdZimOpencode(ctx: AppCtx, args: string[]): void {
       // Say why rather than opening a TUI that will fail on its first message:
       // `note` distinguishes "no proxies" from "the model id is retired".
       ctx.sysLine(
-        `could not find a working route (${note}) — try /zim-opencode again, or --model <id>`,
+        `could not find a working route (${note}) — try /andy-opencode again, or --model <id>`,
         true,
       );
       return;

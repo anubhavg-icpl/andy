@@ -3,7 +3,7 @@
  * overview into scope files.
  *
  * What this module is: the three-step bootstrap over scope.ts (port of
- * zimzilla/scope_validator.py). (1) EXTRACT the structured scope with a model
+ * andy/scope_validator.py). (1) EXTRACT the structured scope with a model
  * pass; (2) WRITE allow.yaml / out-of-scope.yaml in the format scope.ts
  * reads, then load them back through Scope.load so an unparsable file is
  * reported, not trusted; (3) RANK the in-scope assets as a tree after a

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # install.sh — one-line installer for Andy.
 #
-#   curl -fsSL https://raw.githubusercontent.com/Mr-Destroyer/ZimZilla/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/anubhavg-icpl/andy/main/install.sh | bash
 #
 # Clones Andy into ~/.local/share/andy, installs its dependencies with npm and
 # builds the CLI bundle there, then drops an `andy` launcher into ~/.local/bin.
@@ -19,7 +19,7 @@
 #
 # Environment overrides (all optional):
 #   ANDY_REPO              git URL to install from
-#                          (default https://github.com/Mr-Destroyer/ZimZilla.git)
+#                          (default https://github.com/anubhavg-icpl/andy.git)
 #   ANDY_INSTALL_DIR       where the checkout and node_modules live
 #                          (default ${XDG_DATA_HOME:-~/.local/share}/andy)
 #   ANDY_BIN_DIR           where the `andy` launcher is written
@@ -34,7 +34,7 @@
 
 set -euo pipefail
 
-REPO="${ANDY_REPO:-https://github.com/Mr-Destroyer/ZimZilla.git}"
+REPO="${ANDY_REPO:-https://github.com/anubhavg-icpl/andy.git}"
 INSTALL_DIR="${ANDY_INSTALL_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/andy}"
 BIN_DIR="${ANDY_BIN_DIR:-$HOME/.local/bin}"
 ANDY_HOME="${ANDY_HOME:-$HOME/.andy}"
@@ -224,6 +224,6 @@ bold "╰───────────────────────�
 printf '\n'
 printf '    \033[36mandy\033[0m                     # launch, from anywhere\n'
 printf '    \033[36mandy -C ~/proj\033[0m           # run against another directory\n'
-printf '    \033[36mandy --mode zim\033[0m          # full auto, follows AGENTS.md\n\n'
+printf '    \033[36mandy --mode andy\033[0m          # full auto, follows AGENTS.md\n\n'
 printf '  Re-run this installer to update:  %s/install.sh\n' "$INSTALL_DIR"
 printf '  It keeps its own node_modules, so nothing to activate and nothing to install by hand.\n\n'

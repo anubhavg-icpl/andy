@@ -1,6 +1,6 @@
 /**
  * sources.ts — upstream "sources": the endpoints Andy can talk through.
- * (port of zimzilla/sources.py)
+ * (port of andy/sources.py)
  *
  * What this module is: the switchboard over every place ANTHROPIC_BASE_URL
  * can point. Two local LiteLLM proxies front two different upstreams —
@@ -8,8 +8,8 @@
  *     logfare      :4001  →  logfare.ai        (the default, shipped with the repo)
  *     tokenjuice   :4000  →  api.tokenjuice.ai (deepseek-claude's endpoint)
  *
- * — and five hosted/local gateways (tokenharbour, openrouter, unorouter,
- * antseed, aihubmix) are identified by host rather than port. They go down
+ * — and six hosted/local gateways (tokenharbour, openrouter, unorouter,
+ * antseed, aihubmix, zai) are identified by host rather than port. They go down
  * independently, so the point of this module is to make switching between
  * them a one-liner and to have the choice survive a restart
  * (`~/.andy/current-source`).
@@ -23,7 +23,7 @@
  *    and must not block; a cold cache reads as undefined and the caller
  *    falls back to the declared list — which is why the per-source
  *    *-models commands exist to warm it.
- *  - The five gateway modules are imported STATICALLY here (their own
+ *  - The six gateway modules are imported STATICALLY here (their own
  *    back-references to this module are lazy), which is what keeps the
  *    catalog accessors synchronous like their Python originals.
  */
@@ -39,9 +39,10 @@ import * as logfare from './logfare.js';
 import * as openrouter from './openrouter.js';
 import * as tokenharbour from './tokenharbour.js';
 import * as unorouter from './unorouter.js';
+import * as zai from './zai.js';
 import { andyHome } from './shared.js';
 
-// Python read ZIMZILLA_HOME at import; andyHome() reads ANDY_HOME at call
+// Python read ANDY_HOME at import; andyHome() reads ANDY_HOME at call
 // time — observably identical (the env never mutates mid-process) and honest
 // under tests that set ANDY_HOME.
 const DEFAULT_HOME = homedir();
@@ -136,9 +137,16 @@ export const LOGFARE_MODELS: readonly string[] = [
 
 export const TOKENJUICE_MODELS: readonly string[] = ['deepseek-v4.1-flash'];
 
+/**
+ * Z.ai's declared fallback. The live registry is credential-scoped, so a cold
+ * cache shows the documented current GLM models rather than an empty picker.
+ */
+export const ZAI_MODELS: readonly string[] = [...zai.DECLARED_MODELS];
+
 export const MODELS_BY_KEY: Record<string, readonly string[]> = {
   logfare: LOGFARE_MODELS,
   tokenjuice: TOKENJUICE_MODELS,
+  zai: ZAI_MODELS,
 };
 
 /** The catalog-entry slice contextWindowFor reads off any provider's Model. */
@@ -187,6 +195,7 @@ export function modelsFor(baseUrl: string): string[] | undefined {
     unorouter,
     antseed,
     aihubmix,
+    zai,
   };
   const cached = gateway[key]?.cachedIds();
   if (cached) return cached;
@@ -212,6 +221,7 @@ export function catalogModels(key: string): unknown[] | undefined {
     unorouter,
     antseed,
     aihubmix,
+    zai,
   };
   return gateway[key]?.cachedModels() ?? undefined;
 }
@@ -339,8 +349,8 @@ function stateFile(): string {
 
 /**
  * Sources that are always selectable, whether or not discover() finds them on
- * this machine. TokenHarbour, OpenRouter, UnoRouter and AIHubMix are remote:
- * they have no local profile, service or config to discover, so gating them
+ * this machine. TokenHarbour, OpenRouter, UnoRouter, AIHubMix and Z.ai are
+ * remote: they have no local profile, service or config to discover, so gating them
  * on discover() would silently discard the selection and drop a session back
  * onto Logfare at the next launch. AntSeed is local but equally
  * undiscoverable by discover(), which only knows the two LiteLLM proxies —
@@ -353,6 +363,7 @@ export const BUILTIN_KEYS: ReadonlySet<string> = new Set([
   'unorouter',
   'antseed',
   'aihubmix',
+  'zai',
 ]);
 
 /**
@@ -396,6 +407,7 @@ export function activeKey(baseUrl: string | null | undefined): string | undefine
   if (openrouter.isOpenrouter(baseUrl)) return 'openrouter';
   if (unorouter.isUnorouter(baseUrl)) return 'unorouter';
   if (aihubmix.isAihubmix(baseUrl)) return 'aihubmix';
+  if (zai.isZai(baseUrl)) return 'zai';
   // Checked before the port match, and by port rather than by name: the buyer
   // hands out a plain http://localhost:8377 with no "antseed" in it, and the
   // regex below would otherwise find port 8377, miss it in sourceForPort()
@@ -479,7 +491,7 @@ export async function startProxy(src: Source, timeout: number = 180.0): Promise<
   env['LITELLM_PORT'] = String(src.port);
   // Do not wrap this in flock. The launcher already serialises its own
   // cold-start, and wrapping here is how a leaked lock (LiteLLM inheriting
-  // the launcher's lock fd) made /zim-tokenjuice hang until timeout while a
+  // the launcher's lock fd) made /andy-tokenjuice hang until timeout while a
   // manual start of the same script finished in seconds. Two sources live on
   // different ports, so they can come up independently.
   const argv = [src.service, 'start'];

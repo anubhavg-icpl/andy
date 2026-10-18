@@ -1,5 +1,5 @@
 /**
- * ldxhub.ts — LDXHub document-processing job gateway (port of zimzilla/ldxhub.py).
+ * ldxhub.ts — LDXHub document-processing job gateway (port of andy/ldxhub.py).
  *
  * What this module is: the HTTP client for the six document-job services on
  * https://gw.ldxhub.io (docs at gw.portal.ldxhub.io), plus the mode-600 key
@@ -509,7 +509,7 @@ export async function uploadFile(
   } catch {
     return ['', `no such file: ${p}`];
   }
-  // boundary carries the andy name (was `----zimzilla<uuid>`); random so two
+  // boundary carries the andy name (was `----andy<uuid>`); random so two
   // concurrent uploads can never collide on the delimiter
   const boundary = `----andy${randomUUID().replace(/-/g, '')}`;
   const ctype = contentTypeFor(path.extname(p).toLowerCase());

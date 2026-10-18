@@ -1,6 +1,6 @@
 /**
  * config.ts — runtime configuration, model registry and pricing.
- * (port of zimzilla/config.py)
+ * (port of andy/config.py)
  *
  * What this module is: the Config dataclass every other module reads, plus
  * the model registry (KNOWN_MODELS / PRICING) and the permission-mode table
@@ -45,7 +45,7 @@ export const DEFAULT_HOME: string =
   process.env['ANDY_HOME'] || path.join(homedir(), '.andy');
 
 /**
- * Locate the doctrine file that zim mode follows.
+ * Locate the doctrine file that andy mode follows.
  *
  * Searched in order, first hit wins:
  *
@@ -54,7 +54,7 @@ export const DEFAULT_HOME: string =
  *   3. `<home>/AGENTS.md`         — the installed doctrine (~/.andy)
  *   4. `<user_home>/AGENTS.md`    — a hand-kept global file (~)
  *
- * Step 3 is what makes zim mode work from any directory: the file is installed
+ * Step 3 is what makes andy mode work from any directory: the file is installed
  * once by setup.sh, so a session opened in an unrelated project still finds
  * the operator's doctrine instead of silently falling back to the default
  * prompt. A project that ships its own AGENTS.md still wins, because the
@@ -89,7 +89,7 @@ export function findAgentsFile(
 //   auto   every tool auto-approved, bash included.
 //   edits  like auto, but bash is disabled entirely (editing-only session).
 //   plan   read-only: no tool may change anything; the model plans instead.
-//   zim    full auto — every tool runs without asking, and the system prompt
+//   andy   full auto — every tool runs without asking, and the system prompt
 //          is replaced by AGENTS.md (the autonomous pentest operator).
 //   danger full auto — operator-directed; no questions asked.
 //   uncensored  full auto — the default system prompt is thrown out and
@@ -110,7 +110,7 @@ export function findAgentsFile(
 // so the permission gate never actually fires. A mode that omits a tool from
 // both sets would leave it gated: previewed, then answered y/n/a.
 
-export type ModeName = 'auto' | 'edits' | 'plan' | 'zim' | 'danger' | 'uncensored';
+export type ModeName = 'auto' | 'edits' | 'plan' | 'andy' | 'danger' | 'uncensored';
 
 export interface ModeSpec {
   label: string;
@@ -142,8 +142,8 @@ export const MODES: Record<ModeName, ModeSpec> = {
     auto: new Set(),
     deny: new Set(['bash', 'write_file', 'edit_file']),
   },
-  zim: {
-    label: 'ZIM',
+  andy: {
+    label: 'ANDY',
     blurb: 'full auto · follows AGENTS.md',
     auto: new Set(['bash', 'write_file', 'edit_file']),
     deny: new Set(),
@@ -351,8 +351,8 @@ export class Config {
   showThinking: boolean = true;
   mode: string = DEFAULT_MODE;
   /**
-   * Optional path to a doctrine file; only consulted in zim mode. Resolved at
-   * launch by findAgentsFile, and re-resolved on /mode zim so a session that
+   * Optional path to a doctrine file; only consulted in andy mode. Resolved at
+   * launch by findAgentsFile, and re-resolved on /mode andy so a session that
    * started elsewhere still picks the file up.
    */
   agentsPath: string | null = null;

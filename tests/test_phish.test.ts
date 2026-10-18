@@ -1,14 +1,14 @@
-// `/phish` and zim-pane regression suite (vitest port of tests/test_phish.py).
+// `/phish` and andy-pane regression suite (vitest port of tests/test_phish.py).
 // Two layers, matching the split in src/phish.ts itself: the pure logic —
 // target validation, form rewrite, credential picking, the campaign directory,
 // the local server — exercised directly with no terminal; and the wiring —
 // that the dispatch, the help table, the palette, the completion menu and the
-// ZimPane rail all actually expose the command, so a rename in one place
+// AndyPane rail all actually expose the command, so a rename in one place
 // cannot silently orphan it in another.
 // The Python suite's Textual pilot (run_test) has no Ink equivalent here, so
 // the live-app checks run against the exported dispatch (cmdPhish) with a
 // stubbed AppCtx — the same seam AndyApp's handleCommand drives — and the
-// ZimPane state machine is driven through a real ink render on a fake stdout.
+// AndyPane state machine is driven through a real ink render on a fake stdout.
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import fs from 'node:fs'
@@ -28,7 +28,7 @@ import { Config } from '../src/config.js'
 import { HostSet, Scope } from '../src/scope.js'
 import { getPalette } from '../src/theme.js'
 import { SLASH_COMMANDS } from '../src/ui/complete.js'
-import { ZimPane, type ZimPaneHandle } from '../src/ui/widgets.js'
+import { AndyPane, type AndyPaneHandle } from '../src/ui/widgets.js'
 import { cmdPhish } from '../src/ui/screens/campaigns.js'
 import type { AppCtx, AgentLike, Mods } from '../src/ui/app.js'
 
@@ -146,7 +146,7 @@ describe('rewrite', () => {
   it('a live page is rewritten to post at the capture endpoint', () => {
     const [page, cloned] = phish.buildPage('real.example', 'https://real.example/login', src)
     expect(cloned).toBe(true)
-    expect(page).toContain('action="/__zim_capture"')
+    expect(page).toContain('action="/__andy_capture"')
     expect(page).toContain('method="POST"')
     // the original action is gone once a <base> carries the origin
     expect(!page.includes('https://real.example/login') || page.includes('<base')).toBe(true)
@@ -155,7 +155,7 @@ describe('rewrite', () => {
     // relative assets still resolve against the cloned origin
     expect(page).toContain('<base href="https://real.example/">')
     // the JS capture hook is present for JS-built forms
-    expect(page).toContain('zimHooked')
+    expect(page).toContain('andyHooked')
   })
 
   it('an existing <base> is replaced, not doubled', () => {
@@ -167,7 +167,7 @@ describe('rewrite', () => {
   it('no live html falls back to the branded template, still posting here', () => {
     const [tmpl, cloned] = phish.buildPage('lab.example', 'https://lab.example/', null)
     expect(cloned).toBe(false)
-    expect(tmpl).toContain('action="/__zim_capture"')
+    expect(tmpl).toContain('action="/__andy_capture"')
     expect(tmpl).toContain('lab.example')
   })
 })
@@ -256,8 +256,8 @@ describe('pagekite', () => {
       delete process.env.PAGEKITE_BIN
       process.env.ANDY_HOME = path.join(os.tmpdir(), 'andy-no-such-home')
       expect(phish.pagekiteName()).toBe('')
-      process.env.PAGEKITE_NAME = 'zim.pagekite.me'
-      expect(phish.pagekiteName()).toBe('zim.pagekite.me')
+      process.env.PAGEKITE_NAME = 'andy.pagekite.me'
+      expect(phish.pagekiteName()).toBe('andy.pagekite.me')
     } finally {
       for (const k of ['PAGEKITE_NAME', 'PAGEKITE_BIN', 'ANDY_HOME']) {
         if (saved[k] !== undefined) process.env[k] = saved[k]
@@ -353,7 +353,7 @@ describe('server', () => {
       ).toBe(true)
 
       // POST credentials.
-      const post = await fetch(camp.localUrl + '__zim_capture', {
+      const post = await fetch(camp.localUrl + '__andy_capture', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
@@ -411,7 +411,7 @@ describe('scope', () => {
 })
 
 // ---------------------------------------------------------------------------
-// ZimPane (state machine, through a real ink render on a fake stdout)
+// AndyPane (state machine, through a real ink render on a fake stdout)
 // ---------------------------------------------------------------------------
 
 /** Strip CSI/SGR sequences so text assertions see the words, not the colours. */
@@ -420,7 +420,7 @@ function stripAnsi(s: string): string {
   return s.replace(/\x1B\[[0-9;?]*[ -/]*[@-~]/g, '')
 }
 
-describe('zim pane', () => {
+describe('andy pane', () => {
   it('hidden until a campaign starts, then tracks it through its events', async () => {
     // Same harness as test_boot: ink `debug` frames on a PassThrough stdout,
     // one chunk per render, polled — React schedules the re-render off the
@@ -429,11 +429,11 @@ describe('zim pane', () => {
     const out = new PassThrough()
     const frames: string[] = []
     out.on('data', (c: Buffer) => frames.push(stripAnsi(c.toString('utf8'))))
-    const holder: { pane: ZimPaneHandle | null } = { pane: null }
+    const holder: { pane: AndyPaneHandle | null } = { pane: null }
     const instance = render(
-      createElement(ZimPane, {
+      createElement(AndyPane, {
         palette: getPalette('green'),
-        ref: (h: ZimPaneHandle | null) => {
+        ref: (h: AndyPaneHandle | null) => {
           holder.pane = h
         },
       }),
@@ -472,7 +472,7 @@ describe('zim pane', () => {
       // render() commits synchronously.
       const refDeadline = Date.now() + 5_000
       while (holder.pane === null) {
-        if (Date.now() > refDeadline) throw new Error('ZimPane handle never arrived')
+        if (Date.now() > refDeadline) throw new Error('AndyPane handle never arrived')
         await new Promise((r) => setTimeout(r, 20))
       }
       const pane = holder.pane
@@ -501,7 +501,7 @@ describe('zim pane', () => {
         user: 'a@b.co',
         password: 'pw',
         method: 'POST',
-        path: '/__zim_capture',
+        path: '/__andy_capture',
       })
       const withCred = await waitFor((f) => f.includes('a@b.co'), frames.length)
       expect(withCred).toContain('CREDS')
@@ -537,7 +537,7 @@ describe('zim pane', () => {
 
   it.skip('pane: width floors at MIN_WIDTH and caps at MAX_WIDTH', () => {
     // Descoped with the Ink port: the Python pane was mouse-resizable and
-    // clamped its width; Ink has no mouse (PORT-MAP §3), so ZimPane has no
+    // clamped its width; Ink has no mouse (PORT-MAP §3), so AndyPane has no
     // resize path at all and there is no width to clamp.
   })
 })
@@ -570,10 +570,10 @@ describe('wiring', () => {
     expect(commandsSrc).toContain("['/phish <host>',")
     // palette lists it
     expect(appSrc).toContain("['/phish', 'clone a login page and harvest creds', 'phish']")
-    // the compose tree mounts ZimPane
-    expect(appSrc).toContain('<W.ZimPane')
-    // ZimPane itself exists
-    expect(widgetsSrc).toContain('export const ZimPane')
+    // the compose tree mounts AndyPane
+    expect(appSrc).toContain('<W.AndyPane')
+    // AndyPane itself exists
+    expect(widgetsSrc).toContain('export const AndyPane')
   })
 })
 
@@ -626,7 +626,7 @@ function phishCtx(cfg: Config, scope: Scope, log: DispatchLog): { ctx: AppCtx; b
     },
     busyRef,
     phishQRef: { current: [] as Array<Record<string, unknown>> },
-    zimPane: () => ({
+    andyPane: () => ({
       showCampaign: (host: string) => {
         log.paneCalls.push(host)
       },
@@ -703,12 +703,12 @@ describe('/phish dispatch', () => {
   })
 
   it.skip('ui: drive the mounted AndyApp through /phish (needs an Ink app harness)', () => {
-    // The Python suite drove ZimZillaApp through Textual's run_test pilot:
+    // The Python suite drove AndyApp through Textual's run_test pilot:
     // menu, refusal, happy path, pane visibility. Ink has no equivalent test
     // harness here (ink-testing-library is not a dependency), and mounting
     // AndyApp builds a real Agent + Anthropic client. The dispatch-level port
     // of these checks lives in the cmdPhish test above — the same seam
     // AndyApp's handleCommand drives — and the pane visibility behavior in the
-    // zim pane render test.
+    // andy pane render test.
   })
 })

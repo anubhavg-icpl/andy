@@ -2,7 +2,7 @@
  * antseed.ts — AntSeed: the P2P marketplace, reached through its local buyer proxy.
  *
  * What this module is: the AntSeed source adapter (ported from
- * zimzilla/antseed.py). AntSeed is not a hosted gateway — it is a P2P network
+ * andy/antseed.py). AntSeed is not a hosted gateway — it is a P2P network
  * whose local **buyer** process exposes a normal HTTP API on
  * `localhost:8377` speaking both OpenAI and Anthropic, so Andy talks to it
  * exactly like the LiteLLM proxies.
@@ -731,8 +731,8 @@ export async function loadCredentials(): Promise<[string, string, string] | null
   /** `(token, model, origin)` in the shape the other gateways use.
    *
    * AntSeed has no key, so the token is `NO_KEY_PLACEHOLDER` — the same
-   * marker `applyTo` sets. It exists so `/zim-antseed` can share one code
-   * path with `/zim-openrouter` rather than branching around a credential
+   * marker `applyTo` sets. It exists so `/andy-antseed` can share one code
+   * path with `/andy-openrouter` rather than branching around a credential
    * lookup that does not apply here.
    *
    * `null` when no buyer is reachable: that is the honest analogue of "no
@@ -826,7 +826,7 @@ export function looksLikeKey(value: string): boolean {
 
 /**
  * sources.ts owns `$ANDY_HOME/current-source`. Two writers of one selection
- * file is how a switch made here and a switch made with `/zim-source` end
+ * file is how a switch made here and a switch made with `/andy-source` end
  * up disagreeing about what is live — so this module delegates rather than
  * duplicating the read/write.
  *

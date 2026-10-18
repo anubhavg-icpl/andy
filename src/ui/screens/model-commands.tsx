@@ -3,9 +3,9 @@
  * (split from app.tsx once it passed ~3k lines).
  *
  * What this module is: everything that reads, fetches or switches the model
- * catalog: /model, /models, /zim-source, /zim-logfare, /zim-tokenjuice,
- * /zim-tokenharbour, /zim-openrouter, /zim-unorouter, /zim-aihubmix,
- * /zim-antseed, the *-api-setup and *-models commands, and the LDXHub catalog
+ * catalog: /model, /models, /andy-source, /andy-logfare, /andy-tokenjuice,
+ * /andy-tokenharbour, /andy-openrouter, /andy-unorouter, /andy-aihubmix, /andy-zai,
+ * /andy-antseed, the *-api-setup and *-models commands, and the LDXHub catalog
  * browser. Invariants: a fetched catalog is read once per render (the fetch is
  * the slow part); an explicit model switch pays one network round-trip to
  * check membership against the LIVE list rather than refusing a served model
@@ -85,6 +85,9 @@ function modelNote(
 ): string {
   const m = ctx.mods();
   if (!m) return '';
+  // Z.ai's Coding Plan is subscription-billed. Falling through to the generic
+  // estimate table would invent a per-token price the plan does not charge.
+  if (m.sources.activeKey(ctx.cfg.baseUrl) === 'zai') return 'Coding Plan · no per-token charge';
   let live = m.tokenharbour.priceFor?.(name, catalog) ?? null;
   if (live === null) live = m.antseed.priceFor?.(name, asCatalog) ?? null;
   if (live === null) live = m.unorouter.priceFor?.(name, unoCatalog) ?? null;
@@ -150,13 +153,14 @@ export function cmdModel(ctx: AppCtx, args: string[]): void {
     let asCatalog = active === 'antseed' ? m.antseed.cachedModels() : null;
     let unoCatalog = active === 'unorouter' ? m.unorouter.cachedModels() : null;
     let ahCatalog = active === 'aihubmix' ? m.aihubmix.cachedModels() : null;
+    let zaiCatalog = active === 'zai' ? m.zai.cachedModels() : null;
     let lfCatalog = m.sources.catalogFor?.(ctx.cfg.baseUrl) ?? null;
 
     if (!args.length) {
       const rows = modelDisplayOrder(
         ctx,
         models,
-        thCatalog ?? asCatalog ?? unoCatalog ?? ahCatalog,
+        thCatalog ?? asCatalog ?? unoCatalog ?? ahCatalog ?? zaiCatalog,
       ).map((mod) => {
         const isCurrent = mod === ctx.cfg.model;
         // AntSeed's list is of *models*, but what is typed is a pinned id
@@ -217,6 +221,12 @@ export function cmdModel(ctx: AppCtx, args: string[]): void {
             {`  catalog ${catalogClause(m.aihubmix.catalogAge(), m.aihubmix.CACHE_TTL)} — /aihubmix-models shows the free\nones; free models are listed first. Free means priced 0/0, which is\n  narrower than the -free suffix suggests\n`}
           </Text>
         );
+      } else if (active === 'zai') {
+        catalogNote = (
+          <Text color={p.dim}>
+            {`  registry ${catalogClause(m.zai.catalogAge(), m.zai.CACHE_TTL)} — /zai-models refetches it.\nGLM Coding Plan usage is covered by the subscription, not metered per token\n`}
+          </Text>
+        );
       }
       ctx.say(
         <Box flexDirection="column">
@@ -261,7 +271,7 @@ export function cmdModel(ctx: AppCtx, args: string[]): void {
       active === 'antseed' && name.includes('@') ? (name.split('@', 2)[1] ?? name) : name;
     if (
       active &&
-      ['tokenharbour', 'openrouter', 'unorouter', 'antseed', 'logfare', 'aihubmix'].includes(
+      ['tokenharbour', 'openrouter', 'unorouter', 'antseed', 'logfare', 'aihubmix', 'zai'].includes(
         active,
       ) &&
       !models.includes(checkName)
@@ -294,6 +304,11 @@ export function cmdModel(ctx: AppCtx, args: string[]): void {
             const creds = m.aihubmix.loadCredentials();
             [fetched] = await m.aihubmix.fetchModels(creds ? creds[0] : '');
           } else fetched = [...ahCatalog];
+        } else if (active === 'zai') {
+          if (zaiCatalog === null) {
+            const creds = m.zai.loadCredentials();
+            [fetched] = await m.zai.fetchModels(creds ? creds[0] : '');
+          } else fetched = [...zaiCatalog];
         } else if (active === 'logfare') {
           // The status API is public — this works before anything has
           // authenticated. Its absence was the same bug a third time: the
@@ -309,6 +324,7 @@ export function cmdModel(ctx: AppCtx, args: string[]): void {
         else if (active === 'antseed') asCatalog = fetched;
         else if (active === 'unorouter') unoCatalog = fetched;
         else if (active === 'aihubmix') ahCatalog = fetched;
+        else if (active === 'zai') zaiCatalog = fetched;
         else if (active === 'logfare') lfCatalog = fetched;
         models = fetched.map((x) => x.id);
       }
@@ -339,7 +355,7 @@ export function cmdModel(ctx: AppCtx, args: string[]): void {
   })();
 }
 
-// ---- /zim-source: the local-proxy failover -----------------------------------
+// ---- /andy-source: the local-proxy failover -----------------------------------
 
 /** Start the target proxy if needed, then rebuild the client on it. The
  * profile carries the key for this upstream; it is read here, never printed —
@@ -417,14 +433,14 @@ async function verifyModelFor(
   return [name, null];
 }
 
-export function cmdZimSource(ctx: AppCtx, key: string | null): void {
+export function cmdAndySource(ctx: AppCtx, key: string | null): void {
   const m = ctx.mods();
   if (!m) return;
   const p = ctx.pal();
   const found = m.sources.discover();
 
   if (key === null) {
-    // Bare /zim-source: show what is available and which is live.
+    // Bare /andy-source: show what is available and which is live.
     const active = m.sources.activeKey(ctx.cfg.baseUrl);
     const rows: ReactNode[] = [];
     for (const [k, src] of Object.entries(found)) {
@@ -467,6 +483,7 @@ export function cmdZimSource(ctx: AppCtx, key: string | null): void {
       ['openrouter', m.openrouter, 'OpenRouter', '/openrouter-api-setup'],
       ['unorouter', m.unorouter, 'UnoRouter', '/unorouter-api-setup'],
       ['aihubmix', m.aihubmix, 'AIHubMix', '/aihubmix-api-setup'],
+      ['zai', m.zai, 'Z.ai', '/zai-api-setup'],
     ];
     for (const [kind, mod, label, setup] of hosted) {
       const creds = mod.loadCredentials();
@@ -529,7 +546,7 @@ export function cmdZimSource(ctx: AppCtx, key: string | null): void {
         {rows}
         <Text color={p.dim}>
           {
-            '\n  switch with  /zim-logfare,  /zim-tokenjuice,  /zim-tokenharbour\n                 or  /zim-openrouter,  /zim-unorouter,  /zim-aihubmix,\n                 or  /zim-antseed\n'
+            '\n  switch with  /andy-logfare,  /andy-tokenjuice,  /andy-tokenharbour\n                 or  /andy-openrouter,  /andy-unorouter,  /andy-aihubmix,\n                 or  /andy-zai,  /andy-antseed\n'
           }
         </Text>
       </Box>,
@@ -603,7 +620,7 @@ export function cmdTokenharbourKey(ctx: AppCtx, args: string[]): void {
   const savePath = m.tokenharbour.saveKey?.(key, current) ?? '~/.andy/tokenharbour/source';
   m.tokenharbour.clearCache(); // a new key invalidates the old catalog
   ctx.sysLine(`TokenHarbour key saved (…${key.slice(-4)}) to ${savePath}`, true);
-  ctx.sysLine('switch to it with /zim-tokenharbour');
+  ctx.sysLine('switch to it with /andy-tokenharbour');
 }
 
 export function cmdTokenharbourModels(ctx: AppCtx): void {
@@ -663,7 +680,7 @@ export function cmdTokenharbourModels(ctx: AppCtx): void {
   })();
 }
 
-export function cmdZimTokenharbour(ctx: AppCtx): void {
+export function cmdAndyTokenharbour(ctx: AppCtx): void {
   const m = ctx.mods();
   const a = ctx.agent();
   if (!m || !a) return;
@@ -706,11 +723,11 @@ export function cmdZimTokenharbour(ctx: AppCtx): void {
   void token;
 }
 
-// ---- hosted gateways (OpenRouter / UnoRouter / AIHubMix / AntSeed) ----------------
+// ---- hosted gateways (OpenRouter / UnoRouter / AIHubMix / Z.ai / AntSeed) --------
 
 /** (module, label) for a hosted gateway key. AntSeed is included although it
  * is not a *hosted* gateway and has no key: it answers the same calls this
- * table exists to parameterise, so listing it here is what lets /zim-antseed
+ * table exists to parameterise, so listing it here is what lets /andy-antseed
  * share one code path instead of growing a near-copy of it. */
 function gateway(
   ctx: AppCtx,
@@ -721,6 +738,7 @@ function gateway(
   if (kind === 'openrouter') return [m.openrouter, 'OpenRouter'];
   if (kind === 'unorouter') return [m.unorouter, 'UnoRouter'];
   if (kind === 'aihubmix') return [m.aihubmix, 'AIHubMix'];
+  if (kind === 'zai') return [m.zai, 'Z.ai'];
   if (kind === 'antseed') return [m.antseed, 'AntSeed'];
   return null;
 }
@@ -765,7 +783,7 @@ export function cmdGatewayKey(ctx: AppCtx, kind: string, args: string[]): void {
           </Text>
           <Text color={p.dim}>{'  then switch with '}</Text>
           <Text bold color={p.primary}>
-            {'/zim-antseed\n'}
+            {'/andy-antseed\n'}
           </Text>
           <Text color={p.dim}>{`  preference   ${mod.PROFILE ?? '~/.andy/antseed/source'}\n`}</Text>
         </Box>
@@ -779,12 +797,15 @@ export function cmdGatewayKey(ctx: AppCtx, kind: string, args: string[]): void {
               {`/${kind}-api-setup <key>\n`}
             </Text>
           </Box>
-          {/* Worth saying plainly: this catalog is public, so the free list and
-              a model choice work before any key exists. */}
+          {/* Most marketplace catalogs are public; Z.ai's Coding Plan registry
+              is credential-scoped, so the note follows the source rather than
+              claiming one policy for every gateway. */}
           <Box>
             <Text color={p.dim}>{'  note:        '}</Text>
             <Text color={p.dim}>
-              {'the model catalog is public — /models works without a key. A key is needed to send.\n'}
+              {kind === 'zai'
+                ? 'the GLM registry and requests both use a Coding Plan API key.\n'
+                : 'the model catalog is public — /models works without a key. A key is needed to send.\n'}
             </Text>
           </Box>
           <Text color={p.dim}>{`  stored in     ${mod.PROFILE ?? `~/.andy/${kind}/source`}\n`}</Text>
@@ -810,17 +831,18 @@ export function cmdGatewayKey(ctx: AppCtx, kind: string, args: string[]): void {
     );
     return;
   }
-  // Keep whatever model is current, so setting a key does not silently reset
-  // the model the operator was on.
+  // Keep the current model when it belongs to the same endpoint. A source can
+  // substitute its own safe default when the operator was elsewhere — Z.ai
+  // does exactly that rather than carrying another provider's model id.
   const activeEndpoint = mod.activeEndpoint?.(ctx.cfg.baseUrl) ?? false;
   const current = activeEndpoint ? ctx.cfg.model : '';
   const savePath = mod.saveKey?.(key, current) ?? `~/.andy/${kind}/source`;
   mod.clearCache(); // a new key invalidates the old catalog
   ctx.sysLine(`${label} key saved (…${key.slice(-4)}) to ${savePath}`, true);
-  ctx.sysLine(`switch to it with /zim-${kind}`);
+  ctx.sysLine(`switch to it with /andy-${kind}`);
 }
 
-export function cmdZimGateway(ctx: AppCtx, kind: string): void {
+export function cmdAndyGateway(ctx: AppCtx, kind: string): void {
   const m = ctx.mods();
   const a = ctx.agent();
   if (!m || !a) return;
@@ -857,7 +879,7 @@ export function cmdZimGateway(ctx: AppCtx, kind: string): void {
   // A first switch with no model chosen: offer the free list rather than
   // guessing a paid one.
   if (!model) {
-    ctx.sysLine('fetching the free model list…');
+    ctx.sysLine(kind === 'zai' ? 'fetching the GLM registry…' : 'fetching the free model list…');
     cmdModels(ctx, [kind]);
   }
 }
@@ -1029,7 +1051,7 @@ export function cmdModels(ctx: AppCtx, args: string[]): void {
       key = m.sources.activeKey(ctx.cfg.baseUrl) ?? '';
       if (!key) {
         ctx.sysLine(
-          'this endpoint is not a known upstream — /zim-source lists them, or name one: /models openrouter',
+          'this endpoint is not a known upstream — /andy-source lists them, or name one: /models openrouter',
           true,
         );
         return;
@@ -1043,6 +1065,7 @@ export function cmdModels(ctx: AppCtx, args: string[]): void {
       'unorouter',
       'antseed',
       'aihubmix',
+      'zai',
     ]);
     if (!known.has(key)) {
       ctx.sysLine(
@@ -1112,6 +1135,12 @@ async function modelsForKind(
     return (m.tokenharbour.freeModels?.(creds[0]) ??
       Promise.resolve([null, 'no catalog'] as [CatalogModel[] | null, string]));
   }
+  if (kind === 'zai') {
+    const creds = m.zai.loadCredentials();
+    if (creds === null) return [null, 'no Z.ai key — set one with /zai-api-setup <key>'];
+    return (m.zai.usableFreeModels?.(creds[0]) ??
+      Promise.resolve([null, 'no registry'] as [CatalogModel[] | null, string]));
+  }
   if (kind === 'antseed') {
     // `usableFreeModels` rather than `freeModels`: a free model is only
     // usable here if a free peer can be pinned, because the router's trust
@@ -1151,6 +1180,7 @@ function showModels(
         openrouter: 'OPENROUTER',
         unorouter: 'UNOROUTER',
         aihubmix: 'AIHUBMIX',
+        zai: 'Z.AI GLM CODING PLAN',
         tokenharbour: 'TOKENHARBOUR',
         logfare: 'LOGFARE',
         antseed: 'ANTSEED',
@@ -1160,7 +1190,7 @@ function showModels(
   if (!models.length) {
     rows.push(
       <Text key="empty" color={p.amber}>
-        {'  nothing free is usable right now.\n'}
+        {kind === 'zai' ? '  no GLM models came back.\n' : '  nothing free is usable right now.\n'}
       </Text>,
     );
     if (kind === 'openrouter' || kind === 'unorouter') {
@@ -1299,10 +1329,26 @@ function showModels(
       </Text>,
     );
   }
+  if (kind === 'zai') {
+    notes.push(
+      <Text key="plan" color={p.dim}>
+        {
+          '  included = covered by the GLM Coding Plan subscription · plan usage\n  limits and quotas are controlled by Z.ai, not estimated here\n'
+        }
+      </Text>,
+    );
+    notes.push(
+      <Text key="context" color={p.dim}>
+        {
+          '  [1m] is the documented opt-in spelling for the 1M context window;\n  leave it off for the standard context window\n'
+        }
+      </Text>,
+    );
+  }
   ctx.say(
     <Box flexDirection="column">
       <Text bold color={p.accent}>
-        {`  ${label} — FREE MODELS\n\n`}
+        {`  ${label} — ${kind === 'zai' ? 'MODEL REGISTRY' : 'FREE MODELS'}\n\n`}
       </Text>
       {rows}
       {notes}

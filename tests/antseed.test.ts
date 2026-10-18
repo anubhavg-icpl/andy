@@ -772,7 +772,7 @@ describe('antseed regression suite', () => {
   });
 
   it('test_selection_file_is_shared', async () => {
-    // One selection file, so /zim-antseed and /zim-source agree.
+    // One selection file, so /andy-antseed and /andy-source agree.
     // (The Python original saved and restored the real selection; this port
     // runs the whole file under a temp ANDY_HOME, so the operator's file is
     // never touched and no restore is needed.)

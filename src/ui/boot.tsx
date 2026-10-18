@@ -324,18 +324,12 @@ export const BootScreen: FC<BootScreenProps> = ({palette, checks, onDone, rain =
     checksLines.push(chalk.hex(palette.dim)('  ▸ press enter to continue'));
   }
 
-  // Author credits — shown for the whole check phase, not just the tail, so
-  // they are actually readable before the splash hands off to the UI.
+  // The identity line is shown for the whole check phase, not just the tail,
+  // so it is readable before the splash hands off to the UI.
   if (state.phase !== 'banner') {
     checksLines.push('');
     checksLines.push(
-      chalk.hex(palette.dim)('  author     ') + chalk.hex(palette.primary)('Mr-Destroyer / ZIM'),
-    );
-    checksLines.push(
-      chalk.hex(palette.dim)('  youtube    ') + chalk.hex(palette.primary)('@Study_Hard69'),
-    );
-    checksLines.push(
-      chalk.hex(palette.dim)('  instagram  ') + chalk.hex(palette.primary)('zimthegoat'),
+      chalk.hex(palette.dim)('  identity   ') + chalk.hex(palette.primary)('Andy'),
     );
   }
 

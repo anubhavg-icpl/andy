@@ -1,6 +1,6 @@
 /**
  * update.ts — self-update on launch: detect new commits on the upstream and
- * apply them. (port of zimzilla/update.py)
+ * apply them. (port of andy/update.py)
  *
  * What this module is: the launch-time check that answers one question — is
  * `origin` ahead of me, and if so, can I move to it safely? Pure logic, no

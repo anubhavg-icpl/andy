@@ -388,7 +388,7 @@ describe('validate_path', () => {
 
 describe('slug', () => {
   it('a path becomes a safe label; empty still yields one', () => {
-    expect(crack.caseSlug('/home/zim/hashes/tgs.txt')).toBe('home-zim-hashes-tgs.txt')
+    expect(crack.caseSlug('/home/andy/hashes/tgs.txt')).toBe('home-andy-hashes-tgs.txt')
     expect(crack.caseSlug('hunts/ad-corp.local/loot/tgs.txt')).not.toContain('/')
     expect(crack.caseSlug('')).toBe('hashes')
   })

@@ -798,7 +798,7 @@ describe('aihubmix', () => {
     const modelCmdSrc = read(path.join(root, 'src/ui/screens/model-commands.tsx'));
     const cliSrc = read(path.join(root, 'src/cli.ts'));
 
-    for (const cmd of ['zim-aihubmix', 'aihubmix-api-setup', 'aihubmix-models']) {
+    for (const cmd of ['andy-aihubmix', 'aihubmix-api-setup', 'aihubmix-models']) {
       check(`tui: /${cmd} is dispatched`, appSrc.includes(`'${cmd}':`));
       check(`tui: /${cmd} is in the busy-ok set`, appSrc.includes(`'${cmd}'`));
       check(`tui: /${cmd} is offered by completion`, compSrc.includes(`/${cmd}`));

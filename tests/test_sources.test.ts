@@ -1,11 +1,11 @@
 // tests/test_sources.test.ts — vitest port of tests/test_sources.py.
 // What this file is: the regression suite for upstream source discovery and
-// proxy start. It protects the /zim-tokenjuice switch (the installed
+// proxy start. It protects the /andy-tokenjuice switch (the installed
 // ~/.andy/tokenjuice route must win over a leftover $HOME/start-litellm.sh
 // from an older deepseek-claude layout) and the no-flock rule in start_proxy
 // (a leaked flock is what made the in-TUI switch hang until timeout).
 // Port notes on seams: Python patched module attributes (DEFAULT_HOME,
-// ZIMZILLA_HOME, proxy_healthy, subprocess.run, cached_ids). The TS module
+// ANDY_HOME, proxy_healthy, subprocess.run, cached_ids). The TS module
 // reads both homes from the environment, so the home pinning is a fresh module
 // evaluation under a pinned env; the no-flock check records argv through the
 // service script itself; cachedIds is a vi.fn stand-in exactly like
@@ -43,7 +43,7 @@ function touch(p: string, mode = 0o644): string {
 
 // --- pinned-home module loading -------------------------------------------
 
-// Python monkeypatched sources.DEFAULT_HOME and sources.ZIMZILLA_HOME; the TS
+// Python monkeypatched sources.DEFAULT_HOME and sources.ANDY_HOME; the TS
 // module captures DEFAULT_HOME at load (from $HOME) and reads $ANDY_HOME at
 // call time, so pinning both env vars around a fresh module evaluation is the
 // same control. ANDY_HOME must STAY pinned for the calls; HOME only matters
@@ -194,7 +194,7 @@ describe('sources — builtin keys survive a restart', () => {
     const andy = path.join(td, 'andy');
     fs.mkdirSync(andy, { recursive: true });
     // BOTH homes are pinned to the empty temp tree (Python patched both
-    // DEFAULT_HOME and ZIMZILLA_HOME for the same reason): pinning only
+    // DEFAULT_HOME and ANDY_HOME for the same reason): pinning only
     // ANDY_HOME would leave the real $HOME in play, and a box with the legacy
     // $HOME/start-litellm.sh layout would legitimately discover tokenjuice.
     const emptyHome = path.join(td, 'home');

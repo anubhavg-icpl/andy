@@ -7,7 +7,7 @@
  * belongs here; if only one or two modules use it, it lives in their file.
  *
  * Invariants:
- *  - All env reads for the app go through envStr/envPath so the ZIMZILLA→ANDY
+ *  - All env reads for the app go through envStr/envPath so the ANDY→ANDY
  *    rename (PORT-MAP §4) has exactly one surface to audit.
  *  - Paths are plain `string`s (node:path semantics), never Path objects.
  *  - Type names mirror the Python originals (ToolResult, Preview, Deliverable)
@@ -20,7 +20,7 @@ import path from 'node:path';
 // === SECTION === paths — ANDY home/root resolution ===
 
 /**
- * The andy dotdir (replaces ZIMZILLA_HOME / ~/.zimzilla).
+ * The andy dotdir (replaces ANDY_HOME / ~/.andy).
  * `$ANDY_HOME` moves the whole state tree: sessions, hunts, provider
  * profiles, current-theme, current-source, panes mailboxes.
  */
@@ -29,7 +29,7 @@ export function andyHome(): string {
 }
 
 /**
- * The checkout root (replaces ZIMZILLA_ROOT). Set by the `packaging/andy`
+ * The checkout root (replaces ANDY_ROOT). Set by the `packaging/andy`
  * launcher before it execs the interpreter; empty when running from source.
  */
 export function andyRoot(): string | undefined {

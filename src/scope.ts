@@ -2,7 +2,7 @@
  * scope.ts — target scope for bug-bounty engagements: allow.yaml + out-of-scope.yaml.
  *
  * What this module is: the session's static target-scope guard (port of
- * zimzilla/scope.py). Two files, one job each — `allow.yaml` declares the
+ * andy/scope.py). Two files, one job each — `allow.yaml` declares the
  * operator's authorised targets and its PRESENCE arms the session (gated
  * tools then run unattended, like /mode danger); `out-of-scope.yaml` is the
  * never-touch list, hard-checked before any gated tool runs. Deny always

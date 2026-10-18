@@ -49,7 +49,7 @@ import { andyHome, envPath } from './shared.js';
 /**
  * Where the operator keeps their per-provider shell profiles — the same
  * `~/claude-source/<name>` files a plain `source` loads for Claude Code.
- * ($ANDY_CLAUDE_SOURCE overrides; was ZIMZILLA_CLAUDE_SOURCE.)
+ * ($ANDY_CLAUDE_SOURCE overrides; was ANDY_CLAUDE_SOURCE.)
  */
 export const CLAUDE_SOURCE = envPath(
   'ANDY_CLAUDE_SOURCE',
@@ -137,7 +137,7 @@ export class Model {
 /**
  * The slice of `sources` the selection helpers delegate to (PORT-MAP row 16).
  * `sources` owns `$ANDY_HOME/current-source`; two writers of one selection file
- * is how a switch made here and a switch made with `/zim-logfare` end up
+ * is how a switch made here and a switch made with `/andy-logfare` end up
  * disagreeing about what is live.
  */
 interface SourcesSlice {
@@ -321,7 +321,7 @@ export interface GatewayConfig {
  * Point *cfg* at TokenHarbour. Returns `[origin, model]` or `null`.
  *
  * The one place that knows how to aim a session at this gateway, shared by the
- * `/zim-tokenharbour` command and the launch-time restore in `cli.ts` — so a
+ * `/andy-tokenharbour` command and the launch-time restore in `cli.ts` — so a
  * session started by the command and one started from the remembered source end
  * up configured identically.
  *

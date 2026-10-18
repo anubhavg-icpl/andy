@@ -7,7 +7,7 @@ general_settings:
 
 model_list:
   # Token Juice's whole catalog is one chat model, exposed upstream as
-  # `deepseek-ai/DeepSeek-V4.1-Flash`. The alias below is what ZimZilla (and
+  # `deepseek-ai/DeepSeek-V4.1-Flash`. The alias below is what Andy (and
   # anything else speaking Anthropic's protocol) asks for.
   - model_name: deepseek-v4.1-flash
     litellm_params:

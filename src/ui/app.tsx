@@ -1,8 +1,8 @@
 /**
- * app.tsx — the Andy shell: Ink+React port of zimzilla/ui/app.py (ZimZillaApp).
+ * app.tsx — the Andy shell: Ink+React port of andy/ui/app.py (AndyApp).
  *
  * What this module is: the top-level application — boot screen, then the shell
- * (HeaderBar + LoopRail + ChatPane + ZimPane + TelemetryRail + StatusBar +
+ * (HeaderBar + LoopRail + ChatPane + AndyPane + TelemetryRail + StatusBar +
  * prompt) with the slash-command surface, the agent turn loop, and the hunt /
  * team / osint / phish / crack / ad campaign workers. Invariants: one Agent
  * constructed with the app's permission modal as its permissionHandler; slash
@@ -64,7 +64,7 @@ import {
   cmdScope,
   cmdTheme,
   cmdThink,
-  cmdZimOpencode,
+  cmdAndyOpencode,
 } from './screens/commands.js';
 import {
   cmdGatewayKey,
@@ -75,9 +75,9 @@ import {
   cmdModels,
   cmdTokenharbourKey,
   cmdTokenharbourModels,
-  cmdZimGateway,
-  cmdZimSource,
-  cmdZimTokenharbour,
+  cmdAndyGateway,
+  cmdAndySource,
+  cmdAndyTokenharbour,
 } from './screens/model-commands.js';
 import {
   cmdAd,
@@ -117,7 +117,7 @@ export interface Palette {
 
 /** Pre-hydration placeholder; identical to PALETTES[DEFAULT_THEME] (ink). */
 const INK_PLACEHOLDER: Palette = {
-  name: 'zim-ink',
+  name: 'andy-ink',
   bg: '#000000',
   primary: '#ece9e4',
   dim: '#5c6470',
@@ -245,7 +245,7 @@ export interface ChatPaneHandle {
   flashCursor(): void;
 }
 
-export interface ZimPaneHandle {
+export interface AndyPaneHandle {
   showCampaign(host: string): void;
   showHunt(target: string, size: number): void;
   noteHunt(event: Record<string, unknown>): void;
@@ -305,7 +305,7 @@ export interface WidgetsModule {
   }>;
   WelcomeHint: FC<{ palette: Palette }>;
   ChatPane: HandleWidget<{ palette: Palette; rain?: boolean }, ChatPaneHandle>;
-  ZimPane: HandleWidget<{ palette: Palette }, ZimPaneHandle>;
+  AndyPane: HandleWidget<{ palette: Palette }, AndyPaneHandle>;
   NEWLINE_GLYPH?: string;
 }
 
@@ -864,6 +864,7 @@ export interface Mods {
   openrouter: ProviderModule;
   unorouter: ProviderModule;
   aihubmix: ProviderModule;
+  zai: ProviderModule;
   antseed: ProviderModule;
   ldxhub: LdxhubModule;
   agent: { Agent: AgentCtor };
@@ -905,6 +906,7 @@ async function loadMods(): Promise<Mods> {
     openrouter,
     unorouter,
     aihubmix,
+    zai,
     antseed,
     ldxhub,
     agent,
@@ -940,6 +942,7 @@ async function loadMods(): Promise<Mods> {
     sibling<ProviderModule>('../openrouter.js'),
     sibling<ProviderModule>('../unorouter.js'),
     sibling<ProviderModule>('../aihubmix.js'),
+    sibling<ProviderModule>('../zai.js'),
     sibling<ProviderModule>('../antseed.js'),
     sibling<LdxhubModule>('../ldxhub.js'),
     sibling<{ Agent: AgentCtor }>('../agent.js'),
@@ -976,6 +979,7 @@ async function loadMods(): Promise<Mods> {
     openrouter,
     unorouter,
     aihubmix,
+    zai,
     antseed,
     ldxhub,
     agent,
@@ -1003,12 +1007,12 @@ async function loadMods(): Promise<Mods> {
 
 // === SECTION === module constants and free helpers ===
 
-/** What `/zim-opencode` says while it works. Deliberately no counts: how many
+/** What `/andy-opencode` says while it works. Deliberately no counts: how many
  * proxies are in the pool says nothing about how many will be accepted (a pool
  * of 24 measured 12% usable at one point and 79% at another), so a number
  * would be noise dressed as information. The promise it does make — a working
  * route, and a different one next time — is one the command can actually keep. */
-const HUNTING = 'ZIM IS MAKING IT UNLIMITED - FINDING THE BEST PROXIES ...';
+const HUNTING = 'ANDY IS MAKING IT UNLIMITED - FINDING THE BEST PROXIES ...';
 
 /** Braille spinner. Chosen over the ASCII `|/-\\` because it advances in place
  * without the baseline jitter that makes an ASCII spinner look like the line
@@ -1329,7 +1333,7 @@ export function AndyApp(props: AndyAppProps) {
   const chatRef = useRef<ChatPaneHandle>(null);
   const loopRef = useRef<LoopRailHandle>(null);
   const teleRef = useRef<TelemetryRailHandle>(null);
-  const zimRef = useRef<ZimPaneHandle>(null);
+  const andyRef = useRef<AndyPaneHandle>(null);
   const reconRef = useRef<ReconOverlayHandle>(null);
   const waveRef = useRef<WaveOverlayHandle>(null);
 
@@ -1400,7 +1404,7 @@ export function AndyApp(props: AndyAppProps) {
   const chat = () => chatRef.current;
   const loopRail = () => loopRef.current;
   const teleRail = () => teleRef.current;
-  const zimPane = () => zimRef.current;
+  const andyPane = () => andyRef.current;
 
   /** Transcript write; null-safe because timers can fire in the gap between
    * shutdown starting and the pane unmounting (see Python `_chat_pane`). */
@@ -1695,7 +1699,7 @@ export function AndyApp(props: AndyAppProps) {
       if (reasonBufRef.current) chat()?.setReasoning(reasonBufRef.current);
     }, 550);
     // 0.25s: the loop node breathes, the live card's clock runs, the phish
-    // event queue drains onto ZimPane.
+    // event queue drains onto AndyPane.
     const t3 = setInterval(() => {
       loopRail()?.tickPulse();
       chat()?.cardTick();
@@ -2248,7 +2252,7 @@ export function AndyApp(props: AndyAppProps) {
     }
   };
 
-  // ---- peer inbox (zim panes) ---------------------------------------------------
+  // ---- peer inbox (andy panes) ---------------------------------------------------
   /** Unread pane messages, formatted for the start of the next turn. */
   const drainPeerInbox = (): string => {
     const m = M();
@@ -2330,6 +2334,7 @@ export function AndyApp(props: AndyAppProps) {
               'unorouter',
               'antseed',
               'aihubmix',
+              'zai',
             ],
           };
           return pools[cmd] ?? [];
@@ -2496,11 +2501,12 @@ export function AndyApp(props: AndyAppProps) {
     // turn; `/ad <domain>` refuses itself when busy.
     'ad',
     // Setting a key or reading a catalog does not touch the running turn.
-    'tokenharbour-api-setup', 'tokenharbour-models', 'zim-tokenharbour',
-    'openrouter-api-setup', 'zim-openrouter', 'models',
-    'unorouter-api-setup', 'unorouter-models', 'zim-unorouter',
-    'aihubmix-api-setup', 'aihubmix-models', 'zim-aihubmix',
-    'zim-antseed', 'antseed-models', 'logfare-models',
+    'tokenharbour-api-setup', 'tokenharbour-models', 'andy-tokenharbour',
+    'openrouter-api-setup', 'andy-openrouter', 'models',
+    'unorouter-api-setup', 'unorouter-models', 'andy-unorouter',
+    'aihubmix-api-setup', 'aihubmix-models', 'andy-aihubmix',
+    'zai-api-setup', 'zai-models', 'andy-zai',
+    'andy-antseed', 'antseed-models', 'logfare-models',
     // LDXHub: the key and the catalogs are local reads; the catalogs public.
     'ldxhub-api-setup', 'ldxhub-models',
     // Reading an archived report back is a disk read; it starts no turn.
@@ -2509,9 +2515,9 @@ export function AndyApp(props: AndyAppProps) {
     'limits',
     // A display toggle reads and writes only harness state, starts no turn.
     'think',
-    // zim-opencode hands the terminal to a *different* program and starts no
+    // andy-opencode hands the terminal to a *different* program and starts no
     // turn; the TUI is suspended and restored around it.
-    'zim-opencode',
+    'andy-opencode',
   ]);
 
   /** The seam the split-out command handlers receive: the same closures the
@@ -2534,7 +2540,7 @@ export function AndyApp(props: AndyAppProps) {
     chat,
     loopRail,
     teleRail,
-    zimPane,
+    andyPane,
     requestPermission,
     teamAgentFactory,
     runTurn,
@@ -2607,22 +2613,25 @@ export function AndyApp(props: AndyAppProps) {
       findings: () => cmdFindings(ctx),
       'report-bug-hunt': () => cmdReportBugHunt(ctx),
       panes: () => cmdPanes(ctx),
-      'zim-opencode': (a) => cmdZimOpencode(ctx, a),
-      'zim-logfare': () => cmdZimSource(ctx, 'logfare'),
-      'zim-tokenjuice': () => cmdZimSource(ctx, 'tokenjuice'),
-      'zim-tokenharbour': () => cmdZimTokenharbour(ctx),
-      'zim-openrouter': () => cmdZimGateway(ctx, 'openrouter'),
-      'zim-antseed': () => cmdZimGateway(ctx, 'antseed'),
-      'zim-source': () => cmdZimSource(ctx, null),
+      'andy-opencode': (a) => cmdAndyOpencode(ctx, a),
+      'andy-logfare': () => cmdAndySource(ctx, 'logfare'),
+      'andy-tokenjuice': () => cmdAndySource(ctx, 'tokenjuice'),
+      'andy-tokenharbour': () => cmdAndyTokenharbour(ctx),
+      'andy-openrouter': () => cmdAndyGateway(ctx, 'openrouter'),
+      'andy-antseed': () => cmdAndyGateway(ctx, 'antseed'),
+      'andy-source': () => cmdAndySource(ctx, null),
       'tokenharbour-api-setup': (a) => cmdTokenharbourKey(ctx, a),
       'tokenharbour-models': () => cmdTokenharbourModels(ctx),
       'openrouter-api-setup': (a) => cmdGatewayKey(ctx, 'openrouter', a),
-      'zim-unorouter': () => cmdZimGateway(ctx, 'unorouter'),
+      'andy-unorouter': () => cmdAndyGateway(ctx, 'unorouter'),
       'unorouter-api-setup': (a) => cmdGatewayKey(ctx, 'unorouter', a),
       'unorouter-models': () => cmdModels(ctx, ['unorouter']),
-      'zim-aihubmix': () => cmdZimGateway(ctx, 'aihubmix'),
+      'andy-aihubmix': () => cmdAndyGateway(ctx, 'aihubmix'),
       'aihubmix-api-setup': (a) => cmdGatewayKey(ctx, 'aihubmix', a),
       'aihubmix-models': () => cmdModels(ctx, ['aihubmix']),
+      'andy-zai': () => cmdAndyGateway(ctx, 'zai'),
+      'zai-api-setup': (a) => cmdGatewayKey(ctx, 'zai', a),
+      'zai-models': () => cmdModels(ctx, ['zai']),
       'antseed-models': () => cmdModels(ctx, ['antseed']),
       models: (a) => cmdModels(ctx, a),
       'logfare-models': () => cmdLogfareModels(ctx),
@@ -2647,13 +2656,13 @@ export function AndyApp(props: AndyAppProps) {
 
   // ---- /phish event queue drain -------------------------------------------------
   /** /phish events arrive from the HTTP server callback. The queue is the only
-   * crossing: the 0.25s rail tick drains it onto ZimPane. No lock is needed —
+   * crossing: the 0.25s rail tick drains it onto AndyPane. No lock is needed —
    * JS is single-threaded, these are tiny objects, not renderables. */
   function drainPhish() {
     const batch = phishQRef.current;
     phishQRef.current = [];
     if (!batch.length) return;
-    const pane = zimPane();
+    const pane = andyPane();
     if (!pane) return;
     for (const ev of batch) {
       pane.note(ev);
@@ -2672,7 +2681,7 @@ export function AndyApp(props: AndyAppProps) {
     return secret[0] + '•'.repeat(secret.length - 2) + secret[secret.length - 1];
   }
 
-  // ---- /zim-opencode spinner ------------------------------------------------------
+  // ---- /andy-opencode spinner ------------------------------------------------------
   /** Start or stop the proxy-hunt animation. A render-timer rather than worker
    * callbacks on purpose: the worker blocks for tens of seconds at a time
    * inside a single socket call, so a callback-driven animation would freeze
@@ -2725,12 +2734,13 @@ export function AndyApp(props: AndyAppProps) {
       ['/rain', 'toggle the matrix rain', 'rain'],
       ['/think', "show the model's reasoning", 'think'],
       ['/theme', 'switch palette', 'theme'],
-      ['/zim-source', 'upstream sources and status', 'zim-source'],
-      ['/zim-tokenharbour', 'switch upstream to TokenHarbour', 'zim-tokenharbour'],
-      ['/zim-openrouter', 'switch upstream to OpenRouter', 'zim-openrouter'],
-      ['/zim-unorouter', 'switch upstream to UnoRouter', 'zim-unorouter'],
-      ['/zim-aihubmix', 'switch upstream to AIHubMix', 'zim-aihubmix'],
-      ['/zim-antseed', 'switch upstream to AntSeed', 'zim-antseed'],
+      ['/andy-source', 'upstream sources and status', 'andy-source'],
+      ['/andy-tokenharbour', 'switch upstream to TokenHarbour', 'andy-tokenharbour'],
+      ['/andy-openrouter', 'switch upstream to OpenRouter', 'andy-openrouter'],
+      ['/andy-unorouter', 'switch upstream to UnoRouter', 'andy-unorouter'],
+      ['/andy-aihubmix', 'switch upstream to AIHubMix', 'andy-aihubmix'],
+      ['/andy-zai', 'switch upstream to Z.ai GLM Coding Plan', 'andy-zai'],
+      ['/andy-antseed', 'switch upstream to AntSeed', 'andy-antseed'],
       ['/antseed-models', "AntSeed's free models, and the peer to pin", 'antseed-models'],
       ['/tokenharbour-api-setup', 'store your TokenHarbour API key', 'tokenharbour-api-setup'],
       ['/tokenharbour-models', 'fetch the live catalog; show what is free', 'tokenharbour-models'],
@@ -2739,12 +2749,14 @@ export function AndyApp(props: AndyAppProps) {
       ['/unorouter-models', 'the live free catalog — what is free and usable', 'unorouter-models'],
       ['/aihubmix-api-setup', 'store your AIHubMix API key', 'aihubmix-api-setup'],
       ['/aihubmix-models', 'the live free catalog — what is free and usable', 'aihubmix-models'],
+      ['/zai-api-setup', 'store your Z.ai Coding Plan API key', 'zai-api-setup'],
+      ['/zai-models', 'the GLM Coding Plan model registry', 'zai-models'],
       ['/models', 'free models of an upstream — /models [source]', 'models'],
       ['/logfare-models', 'fetch the live catalog; show what is up', 'logfare-models'],
       ['/ldxhub-api-setup', 'store your LDXHub API key', 'ldxhub-api-setup'],
       ['/ldxhub-models', 'LDXHub models/engines — pick the default per service', 'ldxhub-models'],
       ['/panes', 're-open this session under tmux', 'panes'],
-      ['/zim-opencode', 'open opencode behind a fresh rotating IP', 'zim-opencode'],
+      ['/andy-opencode', 'open opencode behind a fresh rotating IP', 'andy-opencode'],
       ['/save', 'write the session to disk', 'save'],
       ['/load', 'restore a saved session', 'load'],
       ['/compact', 'summarise history to free context', 'compact'],
@@ -2899,7 +2911,7 @@ export function AndyApp(props: AndyAppProps) {
     chat()?.applyPalette(palette);
     loopRail()?.applyPalette(palette);
     teleRail()?.applyPalette(palette);
-    zimPane()?.applyPalette(palette);
+    andyPane()?.applyPalette(palette);
   }, [palette, ready]);
 
   // ---- render -----------------------------------------------------------------------
@@ -2917,7 +2929,7 @@ export function AndyApp(props: AndyAppProps) {
   const W = mods.widgets;
   const Rails = mods.rails;
   // Below ~100 cols the rails are hidden rather than squeezing the chat — the
-  // transcript is never the thing that shrinks. ZimPane stays up on a narrow
+  // transcript is never the thing that shrinks. AndyPane stays up on a narrow
   // terminal: the operator opened it on purpose.
   const wide = (columns ?? 100) >= 100;
 
@@ -2936,7 +2948,7 @@ export function AndyApp(props: AndyAppProps) {
       <Box flexDirection="row" flexGrow={1} minHeight={0}>
         {wide ? <Rails.LoopRail palette={palette} ref={loopRef} /> : null}
         <W.ChatPane palette={palette} rain={rainOn} ref={chatRef} />
-        <W.ZimPane palette={palette} ref={zimRef} />
+        <W.AndyPane palette={palette} ref={andyRef} />
         {wide ? (
           <Rails.TelemetryRail palette={palette} totalContext={cfg().contextWindow} ref={teleRef} />
         ) : null}
@@ -3121,7 +3133,7 @@ export interface AppCtx {
   chat(): ChatPaneHandle | null;
   loopRail(): LoopRailHandle | null;
   teleRail(): TelemetryRailHandle | null;
-  zimPane(): ZimPaneHandle | null;
+  andyPane(): AndyPaneHandle | null;
   requestPermission: PermissionHandler;
   teamAgentFactory(cfg: ConfigLike): AgentLike;
   runTurn(

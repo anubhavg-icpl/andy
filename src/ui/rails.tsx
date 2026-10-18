@@ -1,6 +1,6 @@
 /**
  * rails.tsx — Mission Control rails: the loop state machine and the telemetry
- * column (port of zimzilla/ui/rails.py).
+ * column (port of andy/ui/rails.py).
  *
  * What this module is: the two instrument columns either side of the
  * transcript. LoopRail renders the agent cycle as a lit state machine;

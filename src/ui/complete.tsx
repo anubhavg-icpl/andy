@@ -36,21 +36,22 @@ import {KNOWN_MODELS} from '../config.js';
 // (command, description)
 export const SLASH_COMMANDS: [string, string][] = [
   ['/help', 'show the command reference'],
-  ['/mode', 'switch mode: auto | edits | plan | zim | danger | uncensored'],
+  ['/mode', 'switch mode: auto | edits | plan | andy | danger | uncensored'],
   ['/model', 'show or switch the model'],
   ['/cost', 'session token and cost breakdown'],
   ['/scope', 'show scope guard status'],
   ['/rain', 'toggle the matrix-rain background'],
   ['/think', "toggle showing the model's own reasoning"],
   ['/theme', 'switch palette: green | amber | cyan | system'],
-  ['/zim-logfare', 'switch upstream to Logfare (:4001)'],
-  ['/zim-tokenjuice', 'switch upstream to Token Juice (:4000)'],
-  ['/zim-source', 'show upstream sources and status'],
-  ['/zim-tokenharbour', 'switch upstream to TokenHarbour (hosted)'],
-  ['/zim-openrouter', 'switch upstream to OpenRouter (hosted)'],
-  ['/zim-unorouter', 'switch upstream to UnoRouter (hosted, free models)'],
-  ['/zim-aihubmix', 'switch upstream to AIHubMix (hosted, free models)'],
-  ['/zim-antseed', 'switch upstream to AntSeed (local buyer, free peers)'],
+  ['/andy-logfare', 'switch upstream to Logfare (:4001)'],
+  ['/andy-tokenjuice', 'switch upstream to Token Juice (:4000)'],
+  ['/andy-source', 'show upstream sources and status'],
+  ['/andy-tokenharbour', 'switch upstream to TokenHarbour (hosted)'],
+  ['/andy-openrouter', 'switch upstream to OpenRouter (hosted)'],
+  ['/andy-unorouter', 'switch upstream to UnoRouter (hosted, free models)'],
+  ['/andy-aihubmix', 'switch upstream to AIHubMix (hosted, free models)'],
+  ['/andy-zai', 'switch upstream to Z.ai (GLM Coding Plan)'],
+  ['/andy-antseed', 'switch upstream to AntSeed (local buyer, free peers)'],
   ['/tokenharbour-api-setup', 'store your TokenHarbour API key'],
   ['/tokenharbour-models', 'fetch the live catalog; show what is free'],
   ['/openrouter-api-setup', 'store your OpenRouter API key'],
@@ -58,11 +59,13 @@ export const SLASH_COMMANDS: [string, string][] = [
   ['/unorouter-models', 'the live free catalog — what is free and usable'],
   ['/aihubmix-api-setup', 'store your AIHubMix API key'],
   ['/aihubmix-models', 'the live free catalog — what is free and usable'],
+  ['/zai-api-setup', 'store your Z.ai Coding Plan API key'],
+  ['/zai-models', 'the GLM Coding Plan model registry'],
   ['/antseed-models', "list AntSeed's free models, with the peer to pin"],
   ['/ldxhub-api-setup', 'store your LDXHub API key (document jobs)'],
   ['/ldxhub-models', 'LDXHub models/engines — pick the default per service'],
   ['/models', 'free models of an upstream — /models [source]'],
-  ['/zim-opencode', 'open opencode behind a fresh rotating IP'],
+  ['/andy-opencode', 'open opencode behind a fresh rotating IP'],
   ['/save', 'write the session to disk'],
   ['/load', 'restore a saved session'],
   ['/compact', 'summarise history to free context'],
@@ -83,7 +86,7 @@ export const SLASH_COMMANDS: [string, string][] = [
   ['/exit', 'leave the harness'],
 ];
 
-export const MODE_NAMES = ['auto', 'edits', 'plan', 'zim', 'danger', 'uncensored'];
+export const MODE_NAMES = ['auto', 'edits', 'plan', 'andy', 'danger', 'uncensored'];
 // THEME_NAMES is imported from theme.ts rather than declared here, so the popup
 // and `/theme` cannot disagree about which themes exist — the two lists had
 // already drifted apart once. (See the module contract block.)
@@ -263,6 +266,7 @@ export function computeCompletions(text: string, ctx: CompletionContext): Comple
           'unorouter',
           'antseed',
           'aihubmix',
+          'zai',
         ];
       } else if (head === 'model') {
         // Offer whatever the active upstream actually serves, so Logfare's

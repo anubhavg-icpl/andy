@@ -170,7 +170,7 @@ sync_shipped "$SELF/packaging/logfare/start-litellm.sh"     "$SERVICE" 755
 # The Token Juice route is a sibling install, not a variant: its own port,
 # profile and manager. This step only lays the files down — it does not start
 # anything or ask for a credential, because the route ships with a working
-# profile and is used on demand via /zim-tokenjuice. Without it a machine that
+# profile and is used on demand via /andy-tokenjuice. Without it a machine that
 # ran setup.sh but never laid the route files down would have no Token Juice
 # route at all.
 TJ_DIR="$ANDY_HOME/tokenjuice"
@@ -185,11 +185,11 @@ if [[ -d "$SELF/packaging/tokenjuice" ]]; then
   fi
   ok "installed tokenjuice route (:4000)"
 else
-  warn "no tokenjuice packaging — /zim-tokenjuice will be unavailable"
+  warn "no tokenjuice packaging — /andy-tokenjuice will be unavailable"
 fi
 
-# The doctrine file zim mode follows. Installed into ANDY_HOME so that
-# `andy --mode zim` works from ANY directory: without a copy here, a session
+# The doctrine file andy mode follows. Installed into ANDY_HOME so that
+# `andy --mode andy` works from ANY directory: without a copy here, a session
 # opened in an unrelated project finds no AGENTS.md and silently falls back to
 # the default prompt. A project's own AGENTS.md still wins — the workdir is
 # searched first — so this is a fallback, not an override.
@@ -200,7 +200,7 @@ fi
 if [[ -f "$SELF/AGENTS.md" ]]; then
   sync_shipped "$SELF/AGENTS.md" "$ANDY_HOME/AGENTS.md"
 else
-  warn "no AGENTS.md in the checkout — zim mode will fall back to the default prompt"
+  warn "no AGENTS.md in the checkout — andy mode will fall back to the default prompt"
 fi
 
 # --- 3b. pagekite (worldwide /phish forwarder) -------------------------------
@@ -221,7 +221,7 @@ else
 fi
 if [[ ! -f "$ANDY_HOME/pagekite.name" ]]; then
   warn "no kite name at $ANDY_HOME/pagekite.name"
-  warn "write your kite (e.g. zim.pagekite.me) there, or export PAGEKITE_NAME."
+  warn "write your kite (e.g. andy.pagekite.me) there, or export PAGEKITE_NAME."
   warn "first-time signup:  $PK_DIR/pagekite.py --signup"
 else
   ok "kite name: $(tr -d '[:space:]' < "$ANDY_HOME/pagekite.name")"
@@ -286,7 +286,7 @@ if curl -s -o /dev/null -w '%{http_code}' \
 elif "$SERVICE" start; then
   ok "proxy healthy on :$PORT"
 else
-  warn "proxy did not start — see /tmp/litellm-zim.log"
+  warn "proxy did not start — see /tmp/litellm-andy.log"
   warn "continuing; the launcher will retry on next run."
 fi
 
@@ -304,7 +304,7 @@ fi
 # before calling the key bad.
 BODY='{"model":"deepseek-v4.1-flash","max_tokens":8,"messages":[{"role":"user","content":"say ok"}]}'
 probe() {
-  curl -s -o /tmp/zim-setup-probe.json -w '%{http_code}' \
+  curl -s -o /tmp/andy-setup-probe.json -w '%{http_code}' \
     -X POST "http://127.0.0.1:$PORT/v1/messages" \
     -H "content-type: application/json" \
     -H "anthropic-version: 2023-06-01" \
@@ -322,9 +322,9 @@ if [[ "$CODE" == "200" ]]; then
 else
   warn "live request returned HTTP $CODE"
   warn "either the key is wrong or Logfare's upstream is down right now:"
-  head -c 300 /tmp/zim-setup-probe.json 2>/dev/null; printf '\n'
+  head -c 300 /tmp/andy-setup-probe.json 2>/dev/null; printf '\n'
 fi
-rm -f /tmp/zim-setup-probe.json
+rm -f /tmp/andy-setup-probe.json
 
 # --- done --------------------------------------------------------------------
 
@@ -335,6 +335,6 @@ bold "╰───────────────────────�
 printf '\n'
 printf '    \033[36mandy\033[0m                 # launch (starts the proxy if needed)\n'
 printf '    \033[36mandy -C ~/proj\033[0m       # run against another directory\n'
-printf '    \033[36mandy --mode zim\033[0m      # full auto, follows AGENTS.md\n\n'
+printf '    \033[36mandy --mode andy\033[0m      # full auto, follows AGENTS.md\n\n'
 printf '  Manage the proxy:\n'
 printf '    %s {status|stop|restart|logs}\n\n' "$SERVICE"

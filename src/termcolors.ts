@@ -1,6 +1,6 @@
 /**
  * termcolors.ts — ask the terminal for its whole palette, not just its
- * background. (port of zimzilla/termcolors.py)
+ * background. (port of andy/termcolors.py)
  *
  * What this module is: the `system` theme's data source. termbg.ts asks one
  * question — OSC 11, "what is your background?" — because that is all the

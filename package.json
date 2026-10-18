@@ -2,6 +2,10 @@
   "name": "andy",
   "version": "1.0.0",
   "type": "module",
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "bin": {
     "andy": "./dist/cli.js"
   },
@@ -11,6 +15,7 @@
   "scripts": {
     "dev": "tsx src/cli.ts",
     "build": "tsup src/cli.ts --format esm",
+    "prepare": "npm run build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

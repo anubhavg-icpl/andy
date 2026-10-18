@@ -1,5 +1,5 @@
 /**
- * osint.ts — `/osint`: targeted open-source-intelligence recon (port of zimzilla/osint.py).
+ * osint.ts — `/osint`: targeted open-source-intelligence recon (port of andy/osint.py).
  *
  * What this module is: the `/osint` command's non-UI half — the kind registry,
  * target normalisation/validation, the case-directory layout, and the six
@@ -1300,7 +1300,7 @@ trap, and it is worth stating precisely:
 **What DOES work is the crawler surface** (phase 2), and it works completely:
 
   * Sending the **full Googlebot user-agent** — exactly
-    \`Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)\` —
+    \`Moandy/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)\` —
     gets a **server-rendered** page, roughly **1.3 MB** for a real handle
     (about double the shell), containing a GraphQL \`RelayPreloader\` blob with
     the entire profile record, plus real \`og:\` tags.
@@ -1341,7 +1341,7 @@ PHASE 2 — THE GOOGLEBOT RECORD (the core of the run)
 ----------------------------------------------------
 This is where the intelligence is. Do it carefully and save everything.
 
-    UA='Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+    UA='Moandy/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
     curl -sS -m 20 -A "$UA" "https://www.instagram.com/<handle>/" -o "$CASE/ig.html"
 
 Then, from that one capture:
@@ -1824,7 +1824,7 @@ const _TIKTOK_TRAILING_RE = /[/?#][\s\S]*$/;
 //     the profile URL carries no existence signal at all. Even `robots.txt`
 //     returns the shell.
 //   * **The one live route is the crawler surface.** The full
-//     `Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)`
+//     `Moandy/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)`
 //     UA gets a server-rendered ~1.3 MB page carrying a RelayPreloader blob
 //     `"xig_user_by_igid_v2":{…}` with the whole record (username, full_name,
 //     biography, follower_count, following_count, is_verified, is_private, pk,

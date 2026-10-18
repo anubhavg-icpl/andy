@@ -1,6 +1,6 @@
 /**
  * `/ad` — an Active Directory campaign doctrine, and the interlock that keeps
- * it safe (port of `zimzilla/ad.py`).
+ * it safe (port of `andy/ad.py`).
  *
  * What this module is: the four AD prompt templates, the fixed unauthenticated
  * fallback vector matrix, the host tooling probe, and `makeInterlock()` — the

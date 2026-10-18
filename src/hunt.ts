@@ -6,7 +6,7 @@
  * sink, so the whole campaign is testable without a terminal. One wave per
  * invocation (bounded by `maxWaves`, default 1); the stop signal races the wave
  * so `/stop-hunt` cancels the agents rather than waiting out the slowest one.
- * Ported 1:1 from zimzilla/hunt.py: same behaviour, same event payloads
+ * Ported 1:1 from andy/hunt.py: same behaviour, same event payloads
  * (camelCase keys), same on-disk campaign layout under `$ANDY_HOME/hunts/`.
  *
  * Section map (one of the largest modules — jump, don't scroll):
@@ -63,7 +63,7 @@ import type { AgentEvent, ContentBlock, ToolHook } from './shared.js';
  *   text. That is what makes a wave's output machine-readable enough to feed
  *   the next planner.
  *
- * The workers inherit the session's mode, so under `/mode zim` they run the
+ * The workers inherit the session's mode, so under `/mode andy` they run the
  * operator's AGENTS.md doctrine with every tool armed. The wave planner does
  * not: it is forced to `plan` mode, because a planner with bash will start
  * doing the work itself instead of deciding who should.
@@ -2329,7 +2329,7 @@ async function runAgent(
 
   // Its own Config copy, so each agent gets its own Scope and its own
   // cfg.scope — see the cloneConfig note for why sharing one clobbers the
-  // scope guard. The mode is inherited: under /mode zim these agents run the
+  // scope guard. The mode is inherited: under /mode andy these agents run the
   // operator's AGENTS.md doctrine with every tool armed.
   //
   // canReport arms report_finding for this agent. It is a hunt agent, so it

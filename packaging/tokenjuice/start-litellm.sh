@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# start-litellm.sh — run the LiteLLM translation proxy for ZimZilla.
+# start-litellm.sh — run the LiteLLM translation proxy for Andy.
 #
-#   ZimZilla (Anthropic /v1/messages) --▶ LiteLLM :4000 --▶ Token Juice (OpenAI)
+#   Andy (Anthropic /v1/messages) --▶ LiteLLM :4000 --▶ Token Juice (OpenAI)
 #
 # Usage:  ./start-litellm.sh [start|stop|restart|status|logs|help]
 #
@@ -11,7 +11,7 @@
 #
 # This is the Token Juice route — the fallback for when Logfare is down. The
 # two proxies are independent and can run at the same time on their own ports
-# (:4001 Logfare, :4000 Token Juice); /zim-logfare and /zim-tokenjuice in the
+# (:4001 Logfare, :4000 Token Juice); /andy-logfare and /andy-tokenjuice in the
 # harness switch between them.
 
 set -euo pipefail
@@ -46,8 +46,8 @@ if [[ -z "${LITELLM_BIN:-}" ]]; then
 fi
 if [[ -z "$LITELLM_BIN" ]]; then
   for _c in "$HOME/.local/bin/litellm" \
-            "${ZIMZILLA_HOME:-$HOME/.zimzilla}/venv/bin/litellm" \
-            "$HOME/.zimzilla/venv/bin/litellm" "$HOME/venv/bin/litellm"; do
+            "${ANDY_HOME:-$HOME/.andy}/venv/bin/litellm" \
+            "$HOME/.andy/venv/bin/litellm" "$HOME/venv/bin/litellm"; do
     [[ -x "$_c" ]] && LITELLM_BIN="$_c" && break
   done
 fi

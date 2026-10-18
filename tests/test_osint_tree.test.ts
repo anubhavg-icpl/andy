@@ -951,7 +951,7 @@ describe('real reports', () => {
   // Reported as SKIP rather than PASS when absent: a check that silently
   // passes without running is worse than no check, and these are the only
   // inputs that prove the ladder against markdown nobody wrote for a test.
-  // (`~/.zimzilla` in the Python → `~/.andy` per the port's rename rules.)
+  // (`~/.andy` in the Python → `~/.andy` per the port's rename rules.)
   it('real: parses the actual archived reports', (t) => {
     const base = path.join(os.homedir(), '.andy', 'osint');
     const found: string[] = [];

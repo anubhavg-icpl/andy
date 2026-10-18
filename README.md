@@ -8,12 +8,12 @@ Hand it a repo and a goal. It reads the code, runs the commands, writes the
 files, chases the bug across the tree — and keeps going until the work is
 actually finished — while you watch every step.
 
-<sub>by **Mr-Destroyer / ZIM**</sub>
+<sub>by **Andy**</sub>
 
-![node](https://img.shields.io/badge/node-22%2B-00ff41?style=flat-square&labelColor=040704)
-![platform](https://img.shields.io/badge/platform-linux-00ff41?style=flat-square&labelColor=040704)
-![interface](https://img.shields.io/badge/interface-terminal-00ff41?style=flat-square&labelColor=040704)
-![status](https://img.shields.io/badge/status-active-00ff41?style=flat-square&labelColor=040704)
+![node](https://img.shields.io/badge/node-22%2B-ece9e4?style=flat-square&labelColor=14161b)
+![platform](https://img.shields.io/badge/platform-linux-ece9e4?style=flat-square&labelColor=14161b)
+![interface](https://img.shields.io/badge/interface-terminal-ece9e4?style=flat-square&labelColor=14161b)
+![status](https://img.shields.io/badge/status-active-e8843c?style=flat-square&labelColor=14161b)
 
 </div>
 
@@ -104,7 +104,7 @@ works out the steps, executes them, and shows you everything it did.
 One line:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Mr-Destroyer/ZimZilla/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/anubhavg-icpl/andy/main/install.sh | bash
 ```
 
 That clones Andy into `~/.local/share/andy`, installs its dependencies with
@@ -116,7 +116,7 @@ your `PATH` (`~/.local/bin`). Nothing to activate, nothing to
 ```bash
 andy                           # launch
 andy -C ~/some/project         # run against another directory
-andy --mode zim                # full auto, follows AGENTS.md
+andy --mode andy               # full auto, follows AGENTS.md
 andy --allow allow.yaml        # declare your targets
 andy --deny out-of-scope.yaml  # hosts that are never touched
 ```
@@ -135,6 +135,31 @@ curl -fsSL <install.sh-url> | ANDY_INSTALL_DIR=~/andy bash
 
 `install.sh` honours `ANDY_REPO`, `ANDY_INSTALL_DIR`, `ANDY_BIN_DIR`,
 `ANDY_SKIP_DEPS` and `ANDY_SKIP_SETUP`.
+
+### Run once with npx
+
+The full one-command form is:
+
+```bash
+npx --yes --package=github:anubhavg-icpl/andy andy
+```
+
+Node.js 22 or newer is required. npm fetches the repository, runs the package's
+`prepare` build (which emits `dist/cli.js` from the committed TypeScript), and
+launches the `andy` binary from its cache. That is the right command for a
+one-off run or a quick evaluation; it does **not** put an `andy` launcher on
+your `PATH`, and it does not run the installer's proxy setup.
+
+For a hosted source such as Z.ai, the ephemeral path is still complete:
+
+```console
+npx --yes --package=github:anubhavg-icpl/andy andy
+/zai-api-setup <your-zai-coding-plan-key>
+/andy-zai
+```
+
+Use the one-line installer above when you want the persistent launcher,
+auto-updating checkout, and local proxy configuration.
 
 ### From source
 
@@ -230,10 +255,10 @@ restart the checkout under you on the next launch.
 ```
 --model, -m NAME     model to use
 --workdir, -C DIR    working directory
---mode NAME          auto | edits | plan | zim | danger | uncensored   (default: auto)
+--mode NAME          auto | edits | plan | andy | danger | uncensored   (default: auto)
 --allow PATH         declared targets — arms the session
 --deny PATH          hosts that are never touched
---agents PATH        the doctrine file `zim` mode follows (default: workdir,
+--agents PATH        the doctrine file `andy` mode follows (default: workdir,
                      its parent, ~/.andy, then ~)
 --theme {ink,green,amber,cyan,violet,system}
 --rain               start with matrix rain on
@@ -280,7 +305,7 @@ attaching.
 
 ### opencode, behind a rotating IP
 
-`/zim-opencode` opens [opencode](https://opencode.ai) **in this terminal**,
+`/andy-opencode` opens [opencode](https://opencode.ai) **in this terminal**,
 egressing from a different address each time. No account, no API key:
 opencode serves a set of free models itself, and they answer with no
 credentials on disk at all.
@@ -291,7 +316,7 @@ It does three things:
    `opencode not found - install it please !` and prints the install lines
    that work (`curl -fsSL https://opencode.ai/install | bash`,
    `mise use -g opencode`, `brew install opencode`). It never half-runs.
-2. **Installs the `opencode-zim` alias** into `~/.local/bin` — a small shim
+2. **Installs the `opencode-andy` alias** into `~/.local/bin` — a small shim
    that calls back into Andy, so the shell path and the slash command
    cannot drift apart. Delete the file to remove it. It takes no arguments
    of its own; they all go to opencode.
@@ -299,10 +324,10 @@ It does three things:
    is persisted, so consecutive runs differ even across restarts.
 
 ```console
-/zim-opencode                       # open the TUI behind the next proxy
-/zim-opencode --refresh             # rebuild the proxy pool first
-/zim-opencode --model <id>          # a different free model
-/zim-opencode -- --auto --agent build   # everything after `--` goes to opencode
+/andy-opencode                       # open the TUI behind the next proxy
+/andy-opencode --refresh             # rebuild the proxy pool first
+/andy-opencode --model <id>          # a different free model
+/andy-opencode -- --auto --agent build   # everything after `--` goes to opencode
 ```
 
 **Nothing global is touched.** The proxy is passed to the child process
@@ -373,7 +398,7 @@ real turn succeeds.
 While all this runs:
 
 ```
-  ⠹  ZIM IS MAKING IT UNLIMITED - FINDING THE BEST PROXIES ...
+  ⠹  ANDY IS MAKING IT UNLIMITED - FINDING THE BEST PROXIES ...
 ```
 
 No counts, because how many proxies exist says nothing about how many will
@@ -536,11 +561,11 @@ header.
 | `auto` *(default)* | **Full auto** — file writes and shell commands, no confirmation. |
 | `edits` | File work is free; the shell is removed entirely. |
 | `plan` | Read-only. Investigate, propose, change nothing. |
-| `zim` | **Full auto**, governed by your `AGENTS.md`. |
+| `andy` | **Full auto**, governed by your `AGENTS.md`. |
 | `danger` | **Full auto**, operator-directed — no questions asked. |
 | `uncensored` | **Full auto**, the default prompt is thrown out. The model cannot refuse; it only thinks how to do what you said. |
 
-`zim`, `danger` and `uncensored` are the **armed** modes: everything runs
+`andy`, `danger` and `uncensored` are the **armed** modes: everything runs
 unattended, and the header turns red to say so. A tool that a mode
 disallows does not merely get discouraged — it stops existing for that
 session, so `plan` cannot write a file even if you ask it to.
@@ -550,9 +575,9 @@ tools run without asking. Thinking models refuse by reasoning their way to
 "I shouldn't"; this mode replaces the whole system prompt so that chain of
 thought is not available. `/mode uncensored`, then say the thing.
 
-### zim mode and `AGENTS.md`
+### andy mode and `AGENTS.md`
 
-`zim` mode hands the wheel to a doctrine file of your choosing. Write the
+`andy` mode hands the wheel to a doctrine file of your choosing. Write the
 rules you want followed; that file becomes the agent's whole operating
 manual.
 
@@ -563,12 +588,12 @@ It is looked for in this order, first hit wins:
 3. `~/.andy/AGENTS.md` — the installed doctrine (`./setup.sh` puts it there)
 4. `~/AGENTS.md` — a hand-kept global file
 
-Step 3 is what makes `zim` mode work from **any** directory: the file is
+Step 3 is what makes `andy` mode work from **any** directory: the file is
 installed once, so a session opened in an unrelated project still finds
 your doctrine instead of silently falling back to the default prompt. A
 project that ships its own `AGENTS.md` still wins, because the workdir is
 checked first. Override the whole search with `--agents PATH`; switching to
-`zim` at runtime with `/mode zim` re-runs the search, so a session that
+`andy` at runtime with `/mode andy` re-runs the search, so a session that
 started elsewhere picks the file up too.
 
 ---
@@ -600,7 +625,7 @@ command or a colour diff of the change, and three keys:
 
 Andy speaks the Anthropic Messages protocol to whatever `ANTHROPIC_BASE_URL`
 points at, so it can run against a local LiteLLM proxy, a hosted gateway or
-a peer-to-peer marketplace without any code caring which. Seven sources are
+a peer-to-peer marketplace without any code caring which. Eight sources are
 wired up:
 
 | Source | Endpoint | Key | How it starts |
@@ -611,10 +636,12 @@ wired up:
 | **OpenRouter** | `openrouter.ai` | yours | hosted — nothing to start |
 | **UnoRouter** | `api.unorouter.com` | yours | hosted — nothing to start |
 | **AIHubMix** | `aihubmix.com` | yours | hosted — nothing to start |
+| **Z.ai** | `api.z.ai/api/anthropic` | Coding Plan key | hosted — nothing to start |
 | **AntSeed** | `:8377` | **none** | `antseed buyer start` — a local buyer on a P2P network |
 
-Switch with `/zim-logfare`, `/zim-tokenjuice`, `/zim-tokenharbour`,
-`/zim-openrouter`, `/zim-unorouter`, `/zim-aihubmix` or `/zim-antseed`;
+Switch with `/andy-logfare`, `/andy-tokenjuice`, `/andy-tokenharbour`,
+`/andy-openrouter`, `/andy-unorouter`, `/andy-aihubmix`, `/andy-zai` or
+`/andy-antseed`;
 the choice is remembered, so the next launch comes back to the one that was
 working. An endpoint you set deliberately is never overridden by a
 remembered choice.
@@ -667,7 +694,7 @@ That writes `~/.andy/unorouter/source` (mode 600), the same profile format
 as every other source. Then:
 
 ```
-/zim-unorouter             # switch, and fetch the live free list
+/andy-unorouter             # switch, and fetch the live free list
 /unorouter-models          # the free catalog again, any time
 /models unorouter          # the same set, through the generic command
 /model gemini-3.6-flash:free
@@ -744,7 +771,7 @@ million tokens, so this integration does not invent a rate from them. Free
 models read `free` — which is exact — and a paid model falls through to
 Andy's own estimate table, labelled as an estimate.
 
-**`/zim-unorouter` never lands you on a paid model.** With no preference
+**`/andy-unorouter` never lands you on a paid model.** With no preference
 saved it names a free model by default, so a fresh switch costs nothing.
 The default is a *measured* shortlist, ordered by whether the model
 actually returns a `tool_use` block rather than by the catalog's
@@ -806,7 +833,7 @@ translation layer. Set it up:
 
 ```
 /aihubmix-api-setup sk-yourkeyhere
-/zim-aihubmix               # switch
+/andy-aihubmix               # switch
 /aihubmix-models            # the live catalog, any time
 ```
 
@@ -818,7 +845,7 @@ deal as UnoRouter.
 `qwen3.8-flash-free` both answered a real request on a key with no credit
 balance, while the paid ones returned `403 "Your account balance is
 insufficient"`. So the free models are usable on their own, and
-`/zim-aihubmix` names a free one by default — it never lands you on a paid
+`/andy-aihubmix` names a free one by default — it never lands you on a paid
 model.
 
 Two traps, measured rather than guessed:
@@ -833,6 +860,46 @@ Two traps, measured rather than guessed:
   price; they are *not* free. Meanwhile 50 entries are priced 0/0. The
   price is the truth and the suffix is a hint.
 
+### Z.ai — GLM Coding Plan
+
+Andy supports [Z.ai's GLM Coding Plan](https://docs.z.ai/devpack/quick-start)
+natively. Z.ai publishes an Anthropic Messages-compatible base URL:
+
+```text
+https://api.z.ai/api/anthropic
+```
+
+The Anthropic SDK appends `/v1/messages`, so no translation proxy or protocol
+shim is needed — GLM is simply another Andy upstream. Configure it with the
+API key from **Personal Coding Plan → Plan Overview** (or **Team Coding Plan →
+My Plan**):
+
+```console
+/zai-api-setup <your-coding-plan-key>
+/andy-zai
+/zai-models
+```
+
+The key is stored at `~/.andy/zai/source` with mode `0600`; Andy also reuses an
+existing `~/claude-source/*` profile when it already points at the same Z.ai
+endpoint. A Coding Plan key is managed separately from Z.ai's standard
+pay-per-token API key, so use the key that matches the subscription.
+
+The model registry is read from `GET /v1/models` with the Coding Plan key and
+cached for five minutes. The current advertised models are:
+
+| Model | Registry note |
+|---|---|
+| `glm-5.3` | flagship coding model; Andy's default for this source |
+| `glm-5.3-flash` | fast coding model |
+| `glm-5.3-flash[1m]` | Z.ai's documented opt-in spelling for the 1M context window |
+
+Legacy GLM names still returned by Z.ai are shown when the live registry lists
+them; Andy does not advertise retired aliases on its own. Coding Plan usage is
+subscription-billed rather than metered per token, so `/model` says “Coding
+Plan” instead of inventing a token price. Plan quotas and limits remain Z.ai's
+to enforce.
+
 ### AntSeed
 
 AntSeed is not a gateway. It is a peer-to-peer marketplace: independent
@@ -843,7 +910,7 @@ your requests to them. Install it, then start the buyer once:
 antseed buyer start          # serves http://localhost:8377
 ```
 
-Then `/zim-antseed` — **there is no key to set.** The buyer authenticates
+Then `/andy-antseed` — **there is no key to set.** The buyer authenticates
 nothing; a request with no `Authorization` header at all comes back 200.
 Setup commands have nothing to store here, and Andy says so rather than
 pretending.
@@ -882,7 +949,7 @@ pins, most answered with a real reply while others returned `429` or
 than promising one, and `/model` orders them by protocol support and trust.
 If one 429s, try the next.
 
-**`/zim-antseed` never lands you on a paid model.** With no preference
+**`/andy-antseed` never lands you on a paid model.** With no preference
 saved it names a free pin by default, so a fresh switch costs nothing. That
 default is a *measured* shortlist — `nemotron-120b-free`,
 `nemotron-3-ultra-free`, `glm-4.5-flash`, `qwen2.5-coder-7b` — and it is
@@ -991,7 +1058,7 @@ or `out-of-scope.yaml`.
 | `/rain` | toggle the matrix rain |
 | `/think` | show the model's own reasoning — where the endpoint forwards it |
 | `/panes` | re-open this session under tmux — `ctrl+b h`/`v` split |
-| `/zim-opencode [--model id] [--refresh] [-- args]` | open **opencode** in this terminal behind a fresh rotating IP — free models, no account, nothing global |
+| `/andy-opencode [--model id] [--refresh] [-- args]` | open **opencode** in this terminal behind a fresh rotating IP — free models, no account, nothing global |
 | `/save [name]` | write the session to disk |
 | `/load [name]` | restore a session |
 | `/compact` | summarise history to free context |
@@ -999,27 +1066,30 @@ or `out-of-scope.yaml`.
 | `/team <task>` | fan the task out across parallel agents |
 | `/osint <kind> <target>` | open-source recon on a target |
 | `/osint-tree [kind\|path]` | re-show a finished recon as a result tree |
-| `/phish <host>` | clone a login page, serve it, harvest creds into zim-pane |
-| `/zim-logfare` | switch upstream to Logfare (`:4001`) |
+| `/phish <host>` | clone a login page, serve it, harvest creds into andy-pane |
+| `/andy-logfare` | switch upstream to Logfare (`:4001`) |
 | `/logfare-models` | the live Logfare list, with uptime — the default route's own status API |
-| `/zim-tokenjuice` | switch upstream to Token Juice (`:4000`) |
-| `/zim-tokenharbour` | switch upstream to TokenHarbour (hosted) |
+| `/andy-tokenjuice` | switch upstream to Token Juice (`:4000`) |
+| `/andy-tokenharbour` | switch upstream to TokenHarbour (hosted) |
 | `/tokenharbour-api-setup <key>` | store your TokenHarbour API key |
 | `/tokenharbour-models` | fetch the live catalog; show what is free |
-| `/zim-openrouter` | switch upstream to OpenRouter (hosted) |
+| `/andy-openrouter` | switch upstream to OpenRouter (hosted) |
 | `/openrouter-api-setup <key>` | store your OpenRouter API key |
-| `/zim-unorouter` | switch upstream to UnoRouter — hosted, free models, native Messages |
+| `/andy-unorouter` | switch upstream to UnoRouter — hosted, free models, native Messages |
 | `/unorouter-api-setup <key>` | store your UnoRouter API key |
 | `/unorouter-models` | the live free catalog — free, text-output and tools-capable, most upstream channels first |
-| `/zim-aihubmix` | switch upstream to AIHubMix — hosted, native Messages, free tier |
+| `/andy-aihubmix` | switch upstream to AIHubMix — hosted, native Messages, free tier |
 | `/aihubmix-api-setup <key>` | store your AIHubMix API key |
 | `/aihubmix-models` | the live catalog — free first, price is the truth |
-| `/zim-antseed` | switch upstream to AntSeed — the local buyer, free peers, no key |
+| `/andy-zai` | switch upstream to Z.ai — GLM Coding Plan, native Messages |
+| `/zai-api-setup <key>` | store your Z.ai GLM Coding Plan API key |
+| `/zai-models` | the credential-scoped GLM model registry |
+| `/andy-antseed` | switch upstream to AntSeed — the local buyer, free peers, no key |
 | `/antseed-models` | list AntSeed's free models, each with the peer to pin |
 | `/ldxhub-api-setup <key>` | store your LDXHub API key (document jobs) |
 | `/ldxhub-models` | LDXHub models/engines — pick the default per service |
-| `/models [source]` | free models of an upstream — `logfare`, `tokenjuice`, `tokenharbour`, `openrouter`, `unorouter`, `aihubmix`, `antseed` |
-| `/zim-source` | show every upstream and its status |
+| `/models [source]` | included/free models of an upstream — `logfare`, `tokenjuice`, `tokenharbour`, `openrouter`, `unorouter`, `aihubmix`, `zai`, `antseed` |
+| `/andy-source` | show every upstream and its status |
 | `/scope-validator` | paste a programme overview → scope files + ranked targets |
 | `/bug-hunt [--fresh] [--wave N] <target>` | recon (reused if already done), then **one** wave of 10 agents |
 | `/ad [--fresh] [--wave N] [--lockout N] [--arm] <domain> --ack <domain>` | Active Directory campaign — gated and interlocked |
@@ -1052,7 +1122,7 @@ the terminal and come back. Hold your terminal's usual modifier (usually
 
 The palette is the fastest way to reach anything: hit `Ctrl+K` and type a
 few letters. It searches every slash command, every mode, every model on
-your upstream, and every file in the working directory — so `/mode zim` is
+your upstream, and every file in the working directory — so `/mode andy` is
 `mkz`, and a file you half-remember is three characters away.
 
 ---
@@ -1246,7 +1316,7 @@ There is exactly one live unauthenticated route, and the gate is the
 **exact** user-agent string:
 
 - **Send the full Googlebot UA** —
-  `Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)`
+  `Moandy/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)`
   — and Instagram serves a **server-rendered** page, roughly **1.3 MB** for
   a real handle, carrying the entire profile record in
   `xig_user_by_igid_v2` plus real `og:` tags.
@@ -1436,14 +1506,14 @@ It reads on either side of the target:
 
 **The wave web.** When a wave launches, the screen becomes a web: ten
 panes, five a side, each one an agent with its live status and what it is
-doing, all tied by silk to a single node in the middle — **ZIM-TRACK**.
-ZIM-TRACK is not an eleventh agent; it is a view of the campaign, fed by
+doing, all tied by silk to a single node in the middle — **ANDY-TRACK**.
+ANDY-TRACK is not an eleventh agent; it is a view of the campaign, fed by
 the agents themselves, so it cannot be wrong and costs nothing to run. A
 pane lights up in its severity's colour the moment its agent reports.
 
 **Findings land live.** An agent calls `report_finding` the instant it
 confirms a bug, mid-turn, rather than saving everything for its final
-message — so ZIM-TRACK fills in while the wave is still running. Type
+message — so ANDY-TRACK fills in while the wave is still running. Type
 `/stop-hunt` at any point; a terminal too small for the web gets the same
 facts as a list instead.
 
@@ -1687,7 +1757,7 @@ Two things worth knowing:
 
 `/phish` clones a login page, serves it locally, opens a public tunnel if
 a forwarder is installed, and streams every hit and every captured
-credential into **zim-pane** — a live rail on the right of the transcript.
+credential into **andy-pane** — a live rail on the right of the transcript.
 
 ```
 /phish site.com
@@ -1697,7 +1767,7 @@ credential into **zim-pane** — a live rail on the right of the transcript.
   ◈ PUBLIC    https://random-words.trycloudflare.com  via cloudflared
   ◈ CLONE     cloned https://site.com (18421 bytes)
   ◈ LOGS      ~/.andy/phish/site.com-20261005-143210/
-  · watch zim-pane for hits and credentials
+  · watch andy-pane for hits and credentials
 ```
 
 What happens, in order:
@@ -1707,7 +1777,7 @@ What happens, in order:
 2. The live page is fetched and every `<form>` is rewritten to POST back
    here. Relative assets keep resolving against the real origin via
    `<base href>`, so the clone still looks like the original. If the fetch
-   fails, a branded template for that host is served instead — zim-pane
+   fails, a branded template for that host is served instead — andy-pane
    says so.
 3. A local HTTP server binds an ephemeral port. GET serves the page; POST
    captures the fields, appends them to `creds.jsonl`, and returns a
@@ -1715,7 +1785,7 @@ What happens, in order:
 4. A public tunnel is opened if one of `cloudflared`, `ngrok` or `lt`
    (localtunnel) is on `PATH`. First URL wins. No forwarder means LAN-only
    — the local URL still works.
-5. zim-pane lights up and tails hits and credentials for as long as the
+5. andy-pane lights up and tails hits and credentials for as long as the
    campaign is alive. `/phish status` reprints the URLs; `/phish stop`
    tears the server and the tunnel down.
 
@@ -1749,14 +1819,15 @@ src/                          the package (ESM TypeScript, Node 22)
   sources.ts                  the upstream switchboard — every base URL Andy can point at
   logfare.ts / openrouter.ts  source integrations: catalogs, keys, profiles
   tokenharbour.ts / unorouter.ts / aihubmix.ts / antseed.ts / ldxhub.ts
+  zai.ts                       Z.ai GLM Coding Plan: native Messages + registry
   osint.ts                    /osint kinds, playbooks, case dirs, report archive
   osint-tree.ts               reads a finished report back as a result tree
   hunt.ts                     the campaign engine — wave loop, per-wave dirs, reports
   ad.ts                       /ad — the AD doctrine: gate, tool probe, interlock
   crack.ts                    /crack — hash identification, the bounded ladder, the estimate
-  phish.ts                    /phish — clone, serve, tunnel, zim-pane
+  phish.ts                    /phish — clone, serve, tunnel, andy-pane
   team.ts                     /team — the parallel-agent fan-out
-  opencode.ts                 /zim-opencode — the proxy pool, rotation, and the launch
+  opencode.ts                 /andy-opencode — the proxy pool, rotation, and the launch
   panes.ts                    tmux orchestration for --panes / /panes
   update.ts                   launch-time check for new commits
   theme.ts                    the palettes — ink (default), green, amber, cyan, violet, system
@@ -1766,7 +1837,7 @@ src/                          the package (ESM TypeScript, Node 22)
   cli.ts                      argument parsing, launch wiring, the re-exec loop
   ui/                         the terminal interface (Ink + React)
     app.tsx                   the shell — transcript, rails, command dispatch
-    widgets.tsx               header, prompt, transcript pane, status bar, zim-pane
+    widgets.tsx               header, prompt, transcript pane, status bar, andy-pane
     rails.tsx                 the loop state machine and the telemetry column
     renderers.tsx             tool panels, reasoning, findings, markers
     markdown.ts               a model's answer, rendered as markdown not as source
@@ -1798,6 +1869,7 @@ npx vitest run tests/test_hunt.test.ts  # the campaign engine
 npx vitest run tests/test_ad.test.ts    # /ad — the gate, the interlock, the tool probe
 npx vitest run tests/test_crack.test.ts # /crack — identification, the estimate, a real crack
 npx vitest run tests/test_phase4.test.ts # the tools, the loop, the themes
+npx vitest run tests/test_zai.test.ts    # Z.ai GLM Coding Plan + registry
 npx vitest run tests/test_markdown.test.ts
 npx vitest run tests/test_osint.test.ts
 npx vitest run tests/test_osint_tree.test.ts
@@ -1859,5 +1931,5 @@ actually serving.
 ---
 
 <div align="center">
-<sub>Built by <b>Mr-Destroyer / ZIM</b> · yt <b>@Study_Hard69</b> · ig <b>zimthegoat</b></sub>
+<sub>Built by <b>Andy</b></sub>
 </div>

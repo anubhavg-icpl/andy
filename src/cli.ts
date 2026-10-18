@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * cli.ts — command-line entrypoint: `andy` / `node dist/cli.js`.
- * (port of zimzilla/__main__.py; VERSION folds in zimzilla/__init__.py)
+ * (port of andy/__main__.py; VERSION folds in andy/__init__.py)
  *
  * What this module is: argv parsing (hand-rolled — no new deps), launch
  * preflight (scope files, doctrine file, theme, credentials, self-update),
@@ -36,7 +36,7 @@ import * as sourcesMod from './sources.js';
 import { THEME_NAMES, currentTheme } from './theme.js';
 import * as updateMod from './update.js';
 
-/** zimzilla/__init__.py's `__version__`, folded here per PORT-MAP row 42. */
+/** andy/__init__.py's `__version__`, folded here per PORT-MAP row 42. */
 export const VERSION = '1.0.0';
 
 const CLI_PATH = fileURLToPath(import.meta.url);
@@ -144,7 +144,7 @@ function helpText(): string {
     '  --no-think                do not show the model\'s own reasoning when the endpoint forwards it',
     '                            (on by default; /think toggles)',
     '  --mode MODE               agent mode: ' + MODE_CHOICES.join(' | ') + ' (default: auto)',
-    '  --agents PATH             path to AGENTS.md used by zim mode (default: workdir, its',
+    '  --agents PATH             path to AGENTS.md used by andy mode (default: workdir, its',
     '                            parent, ~/.andy, then ~)',
     '  --max-tokens N            max output tokens per reply',
     '  --no-auto-compact         never compact history automatically; /compact still works',
@@ -489,10 +489,10 @@ export async function main(argv?: string[]): Promise<number> {
     legacyScope = scopeMod.findLegacyScope(workdir, homedir()) ?? undefined;
   }
 
-  // Zim mode follows the operator's AGENTS.md. The search order lives in
-  // config.findAgentsFile so the CLI and the runtime /mode zim path cannot
+  // Andy mode follows the operator's AGENTS.md. The search order lives in
+  // config.findAgentsFile so the CLI and the runtime /mode andy path cannot
   // drift apart: workdir, its parent, the installed doctrine in ~/.andy,
-  // then ~. The installed copy is what makes zim mode work from any directory.
+  // then ~. The installed copy is what makes andy mode work from any directory.
   let agentsPath: string | undefined;
   if (args.agents) {
     agentsPath = path.resolve(expandTilde(args.agents));
@@ -549,6 +549,7 @@ export async function main(argv?: string[]): Promise<number> {
       unorouter: () => import('./unorouter.js'),
       antseed: () => import('./antseed.js'),
       aihubmix: () => import('./aihubmix.js'),
+      zai: () => import('./zai.js'),
     };
     const loader = gateways[remembered];
     if (loader) {
@@ -680,7 +681,7 @@ export async function main(argv?: string[]): Promise<number> {
   return 0;
 }
 
-// `python -m zimzilla` → `node dist/cli.js`: run main when executed directly.
+// `python -m andy` → `node dist/cli.js`: run main when executed directly.
 if (process.argv[1] && path.resolve(process.argv[1]) === CLI_PATH) {
   void main().then(
     (code) => process.exit(code),

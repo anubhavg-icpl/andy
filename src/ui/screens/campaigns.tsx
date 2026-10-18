@@ -478,7 +478,7 @@ function phishUsage(ctx: AppCtx): void {
       </Box>
       <Box>
         <Text color={p.dim}>{'\n  hits and credentials stream into '}</Text>
-        <Text color={p.primary}>zim-pane</Text>
+        <Text color={p.primary}>andy-pane</Text>
         <Text color={p.dim}>{' on the right.\n'}</Text>
       </Box>
       <Box>
@@ -540,7 +540,7 @@ function phishStop(ctx: AppCtx): void {
   const m = ctx.mods();
   if (!m) return;
   const camp = m.phish.stop();
-  ctx.zimPane()?.note({ kind: 'stopped' });
+  ctx.andyPane()?.note({ kind: 'stopped' });
   if (camp === null) {
     ctx.sysLine('no phishing campaign is running', true);
     return;
@@ -567,7 +567,7 @@ async function launchPhish(ctx: AppCtx, target: string): Promise<void> {
     ctx.setBusyBoth(false);
     ctx.updateBar({ activity: 'idle' });
     ctx.sysLine(`phish failed: ${errName(e)}`, true);
-    ctx.zimPane()?.hide();
+    ctx.andyPane()?.hide();
     return;
   }
   ctx.setBusyBoth(false);
@@ -616,7 +616,7 @@ async function launchPhish(ctx: AppCtx, target: string): Promise<void> {
         </Text>
         <Text color={p.dim}>{camp.directory + '\n'}</Text>
       </Box>
-      <Text color={p.dim}>{'  · watch zim-pane for hits and credentials\n'}</Text>
+      <Text color={p.dim}>{'  · watch andy-pane for hits and credentials\n'}</Text>
     </Box>,
   );
 }
@@ -656,7 +656,7 @@ export function cmdPhish(ctx: AppCtx, args: string[]): void {
     ctx.sysLine('harness is busy — Ctrl+C to interrupt', true);
     return;
   }
-  ctx.zimPane()?.showCampaign(host);
+  ctx.andyPane()?.showCampaign(host);
   const p = ctx.pal();
   ctx.say(
     <Box flexDirection="column">
@@ -902,7 +902,7 @@ function huntUsage(ctx: AppCtx): void {
           '\n  Each wave: the planner reads what every earlier wave found and\n  aims the next ten somewhere new. Run it under '
         }
       </Text>
-      <Text color={p.primary}>/mode zim</Text>
+      <Text color={p.primary}>/mode andy</Text>
       <Text color={p.dim}>{' so the\n  agents follow your AGENTS.md doctrine.\n'}</Text>
       <Box>
         <Text color={p.dim}>{'\n  evidence lands in '}</Text>
@@ -1063,7 +1063,7 @@ export function cmdBugHunt(ctx: AppCtx, args: string[]): void {
       </Box>
     </Box>,
   );
-  ctx.zimPane()?.showHunt(target, m.hunt.HUNT_WAVE_SIZE);
+  ctx.andyPane()?.showHunt(target, m.hunt.HUNT_WAVE_SIZE);
   void runHunt(ctx, target, { fresh, waveNumber });
 }
 
@@ -1306,7 +1306,7 @@ function adUsage(ctx: AppCtx): void {
       </Text>
       <Text color={p.primary}>{`${path.join(ctx.cfg.stateDir, 'hunts')}/ad-<domain>/\n`}</Text>
       <Text color={p.dim}>{'  Run it under '}</Text>
-      <Text color={p.primary}>/mode zim</Text>
+      <Text color={p.primary}>/mode andy</Text>
       <Text color={p.dim}>{' so the agents follow your AGENTS.md doctrine.\n'}</Text>
     </Box>,
   );
@@ -1608,7 +1608,7 @@ export function cmdAd(ctx: AppCtx, args: string[]): void {
       </Box>
     </Box>,
   );
-  ctx.zimPane()?.showHunt(domain, m.hunt.HUNT_WAVE_SIZE);
+  ctx.andyPane()?.showHunt(domain, m.hunt.HUNT_WAVE_SIZE);
   runAd(ctx, domain, { probes, fresh, waveNumber, lockout, armed });
 }
 
@@ -1871,7 +1871,7 @@ export async function runHunt(
     const ev = evObj as Record<string, unknown>;
     const etype = String(ev['type'] ?? '');
 
-    ctx.zimPane()?.noteHunt(ev);
+    ctx.andyPane()?.noteHunt(ev);
 
     // The wave view sees every event that describes a wave, fed before the
     // transcript branches so a finding reaches the tracker in the same tick

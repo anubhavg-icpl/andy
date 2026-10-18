@@ -1,7 +1,7 @@
 /**
  * permission-modal.tsx — confirmation overlay for gated tools (PermissionModal).
  *
- * What this module is: the Ink port of zimzilla/ui/app.py's PermissionModal
+ * What this module is: the Ink port of andy/ui/app.py's PermissionModal
  * ModalScreen — a centred panel showing a tool call's preview and taking
  * yes/no/always. Invariant: while it is mounted it owns the keyboard (its
  * useInput is the only active one), so approval keystrokes like "y" never leak

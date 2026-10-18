@@ -42,7 +42,7 @@ NODE="$(command -v node || true)"
 ANDY_HOME="${ANDY_HOME:-$HOME/.andy}"
 
 # Which upstream to use. An explicit environment variable always wins; failing
-# that, honour the source last chosen with /zim-logfare or /zim-tokenjuice, so
+# that, honour the source last chosen with /andy-logfare or /andy-tokenjuice, so
 # restarting lands back on whichever one was working. Absent either, Logfare.
 _env_override="${LITELLM_ENV_FILE:-}"
 _port_override="${LITELLM_PORT:-}"
@@ -73,8 +73,8 @@ if [[ -n "$_inherited_base_url" \
 fi
 
 if [[ "$_skip_profile" != "1" ]]; then
-  # The hosted gateways — TokenHarbour, OpenRouter — are remote: there
-  # is no proxy to start, and no LiteLLM config to point at one. Andy's own
+  # The hosted gateways are remote: there is no proxy to start, and no
+  # LiteLLM config to point at one. Andy's own
   # profile (written by /<name>-api-setup) is sourced when it exists, which sets
   # ANTHROPIC_BASE_URL to the hosted endpoint; the case below then skips the
   # proxy on its own. When it does not exist the key lives in the environment or
@@ -90,7 +90,7 @@ if [[ "$_skip_profile" != "1" ]]; then
   # dies fail-closed — "profile not found" — for a gateway that needs no profile
   # at all. That is a session that cannot start, for a reason that is not true.
   case "$_current_source" in
-    tokenharbour|openrouter)
+    tokenharbour|openrouter|unorouter|aihubmix|zai)
       if [[ -r "$ANDY_HOME/$_current_source/source" ]]; then
         LITELLM_ENV_FILE="${_env_override:-$ANDY_HOME/$_current_source/source}"
       fi
@@ -125,7 +125,7 @@ fi
 
 LITELLM_ENV_FILE="${LITELLM_ENV_FILE:-$ANDY_HOME/logfare/source}"
 LITELLM_PORT="${LITELLM_PORT:-4001}"
-LITELLM_LOG="${LITELLM_LOG:-/tmp/litellm-zim.log}"
+LITELLM_LOG="${LITELLM_LOG:-/tmp/litellm-andy.log}"
 LITELLM_SERVICE="${LITELLM_SERVICE:-$ANDY_HOME/logfare/start-litellm.sh}"
 
 ANDY_NO_PROXY="${ANDY_NO_PROXY:-0}"
@@ -258,7 +258,7 @@ ensure_proxy() {
 #
 # Close the lock fd before exec. Without that, the harness (and any LiteLLM
 # it later starts) inherits the open file and holds the lock for the whole
-# session — /zim-tokenjuice then blocks on flock until start_proxy times out,
+# session — /andy-tokenjuice then blocks on flock until start_proxy times out,
 # even though a manual start takes a few seconds.
 if command -v flock >/dev/null 2>&1 && [[ "$ANDY_NO_PROXY" != "1" ]]; then
   exec 9>"${TMPDIR:-/tmp}/andy-proxy.lock"

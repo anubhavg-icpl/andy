@@ -1,6 +1,6 @@
 /**
  * osint-tree.ts — `/osint-tree`: read a finished recon report back as a tree
- * (port of zimzilla/osint_tree.py).
+ * (port of andy/osint_tree.py).
  *
  * What this module is: the reader for `/osint` results. `osint.ts` *runs* a
  * recon; this parses the markdown report it leaves behind (archive or

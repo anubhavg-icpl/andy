@@ -1,6 +1,6 @@
 /**
  * opencode.ts — run the `opencode` CLI behind a rotating, per-process IP
- * (port of zimzilla/opencode.py).
+ * (port of andy/opencode.py).
  *
  * What this module is: a pool of ordinary HTTP proxies, validated in two
  * stages, that each `opencode` launch rotates through — plus the
@@ -104,7 +104,7 @@ export const ALIAS = 'opencode-andy';
  * as a single id rather than a list because the free set rotates: opencode
  * retires and adds these over time, and a stale id fails loudly with "Model is
  * unavailable" rather than silently costing money, which is the failure we
- * want. `/zim-opencode --model <id>` overrides it; `opencode models` lists.
+ * want. `/andy-opencode --model <id>` overrides it; `opencode models` lists.
  */
 export const DEFAULT_MODEL = 'opencode/deepseek-v4.1-flash-free';
 
@@ -1281,7 +1281,7 @@ export function aliasPath(): string {
  * The shim's body. It does not reimplement rotation — it calls back into this
  * module, so the shell path and the slash command cannot drift apart.
  *
- * Python exec'd `sys.executable -m zimzilla.opencode`; the TS analogue execs
+ * Python exec'd `sys.executable -m andy.opencode`; the TS analogue execs
  * node on THIS module's file (self-executing via the main-guard at the bottom
  * of this file). `--experimental-strip-types` is added for a .ts source path
  * (dev/tsx checkout) so the shim works before a build lays down dist JS.
@@ -1293,7 +1293,7 @@ function shimBody(): string {
     '#!/usr/bin/env bash\n' +
     `# ${ALIAS} — opencode behind a fresh rotating proxy (written by Andy).\n` +
     '#\n' +
-    '# Installed by /zim-opencode. Each run leaves from a different address; only\n' +
+    '# Installed by /andy-opencode. Each run leaves from a different address; only\n' +
     '# this process is proxied, never the rest of the system. Delete this file to\n' +
     '# remove it.\n' +
     'set -euo pipefail\n' +
@@ -1364,7 +1364,7 @@ export async function main(argv?: string[]): Promise<number> {
 }
 
 // `node …/opencode.ts` (the opencode-andy shim) lands here — the analogue of
-// `python -m zimzilla.opencode` hitting `if __name__ == "__main__"`.
+// `python -m andy.opencode` hitting `if __name__ == "__main__"`.
 //
 // Guard is the launched file's basename stem, NOT a bare
 // `import.meta.url === pathToFileURL(argv[1])` comparison: once tsup bundles

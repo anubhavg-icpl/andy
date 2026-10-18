@@ -2,7 +2,7 @@
  * tests/test_deliverable.test.ts — vitest port of tests/test_deliverable.py.
  *
  * What this suite is: the regression suite for the deliverable check in
- * `Agent.runTurn`. The original failure: `/osint instagram zimthegoat` ran
+ * `Agent.runTurn`. The original failure: `/osint instagram andythegoat` ran
  * every phase, wrote 6 MB of real evidence, printed "All phases complete.
  * Writing the report." as plain text — and stopped. No report.md was ever
  * written. The loop broke on "no tool calls", which is right for a chat turn

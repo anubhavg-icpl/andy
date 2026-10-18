@@ -503,7 +503,7 @@ describe('wave web', () => {
     const mark = splashMark(p, 'deepseek-v4.1-flash', 'http://localhost:4001')
     const text = mark.replace(/\u001b\[[0-9;]*m/g, '') // strip chalk's SGR codes
     const rows = text.split('\n')
-    // splash: the mark carries the name (renamed ZIMZILLA -> ANDY)
+    // splash: the mark carries the name (renamed ANDY -> ANDY)
     expect(text).toContain('ANDY')
     // splash: the mark carries the model
     expect(text).toContain('deepseek-v4.1-flash')
