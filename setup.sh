@@ -251,7 +251,11 @@ else
   command -v python3 >/dev/null 2>&1 \
     || die "python3 not found — needed only to build the LiteLLM proxy venv."
   python3 -m venv "$PROXY_VENV" || die "could not create $PROXY_VENV"
-  "$PROXY_PY" -m pip install --quiet --disable-pip-version-check --upgrade pip || true
+  # --no-user overrides a global `pip config global.user=true`. Such a config
+  # is valid outside a virtualenv but pip refuses --user inside one, which
+  # otherwise turns a supported machine-level setting into an installer error.
+  "$PROXY_PY" -m pip install --quiet --disable-pip-version-check --no-user \
+    --upgrade pip || true
   # Both floors are load-bearing, and they live here rather than in a
   # requirements file because this is the environment that has to satisfy them.
   #
@@ -268,7 +272,7 @@ else
   # BaseDefaultEventLoopPolicy, which Python 3.14 removed, so the proxy dies at
   # startup with "cannot import name 'BaseDefaultEventLoopPolicy'" and never
   # binds its port.
-  "$PROXY_PY" -m pip install --quiet --disable-pip-version-check \
+  "$PROXY_PY" -m pip install --quiet --disable-pip-version-check --no-user \
     "litellm[proxy]>=1.100.1" "uvloop>=0.22.1" </dev/null \
     || die "could not install litellm[proxy] into $PROXY_VENV"
   ok "litellm installed into $PROXY_VENV"

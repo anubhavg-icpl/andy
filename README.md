@@ -136,6 +136,26 @@ curl -fsSL <install.sh-url> | ANDY_INSTALL_DIR=~/andy bash
 `install.sh` honours `ANDY_REPO`, `ANDY_INSTALL_DIR`, `ANDY_BIN_DIR`,
 `ANDY_SKIP_DEPS` and `ANDY_SKIP_SETUP`.
 
+### Z.ai-only install — no Python
+
+Python is needed only by the optional local Logfare proxy. A direct hosted
+upstream such as Z.ai needs none of it. Install the launcher without route
+setup, then configure the Coding Plan inside Andy:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/anubhavg-icpl/andy/main/install.sh \
+  | ANDY_SKIP_SETUP=1 bash
+hash -r                          # teach the current zsh about the new command
+andy
+```
+
+Inside Andy:
+
+```console
+/zai-api-setup <your-zai-coding-plan-key>
+/andy-zai
+```
+
 ### Run once with npx
 
 The full one-command form is:
@@ -148,7 +168,9 @@ Node.js 22 or newer is required. npm fetches the repository, runs the package's
 `prepare` build (which emits `dist/cli.js` from the committed TypeScript), and
 launches the `andy` binary from its cache. That is the right command for a
 one-off run or a quick evaluation; it does **not** put an `andy` launcher on
-your `PATH`, and it does not run the installer's proxy setup.
+your `PATH`, and it does not run the installer's proxy setup. In other words,
+running `npx` once does not make a later bare `andy` command work; either use
+the `npx` form each time or run the installer above.
 
 For a hosted source such as Z.ai, the ephemeral path is still complete:
 

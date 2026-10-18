@@ -160,6 +160,17 @@ describe('install — the layout install.sh lays down', () => {
   );
 });
 
+describe('install — optional Python proxy setup', () => {
+  it('overrides a global pip user-site config inside the proxy venv', () => {
+    const setup = fs.readFileSync(path.join(ROOT, 'setup.sh'), 'utf-8');
+    const installs = setup.split('\n').filter((line) => line.includes('-m pip install'));
+    expect(installs.length).toBeGreaterThan(0);
+    for (const line of installs) {
+      expect(line.includes('--no-user'), `${line.trim()} overrides global.user=true`).toBe(true);
+    }
+  });
+});
+
 // ---------------------------------------------------------------------------
 // The launcher — which runtime and tree it picks
 // ---------------------------------------------------------------------------
