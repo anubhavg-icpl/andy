@@ -1,412 +1,235 @@
 /**
- * gen-graphics.ts — regenerate the animated README graphics
- * (docs/hero.svg, docs/terminal.svg).
+ * gen-graphics.ts — regenerate the README graphics (docs/hero.svg,
+ * docs/terminal.svg).
  *
  * Run:  npx tsx scripts/gen-graphics.ts   (from the checkout)
  *
- * Port of docs/gen_graphics.py (preserved at git tag pre-andy-port). Both
- * files are plain, self-contained SVG — no external assets, no JS. GitHub
- * renders the CSS animations in place. Every animation is layered ON TOP of a
- * fully-visible base state, so a renderer that samples the first frame (or
- * ignores animation entirely) still shows the complete graphic.
+ * Both files are plain, self-contained SVG — no external assets, no JS.
+ * GitHub renders the CSS animations in place. Every animation is layered ON
+ * TOP of a fully-visible base state, so a renderer that samples the first
+ * frame (or ignores animation entirely) still shows the complete graphic.
  *
- * Byte-faithful to the Python output, which required two deliberate choices:
- *
- *  - The random layer (rain positions, durations, digits) is drawn from a
- *    from-scratch MT19937 — CPython's `random` — seeded the way
- *    `random.seed(7)` seeds, so the generated SVG matches the committed one
- *    glyph for glyph. Swap in `Math.random()` and every rain line moves.
- *
- *  - Number formatting rounds half-to-even, the way Python's `f"{x:.0f}"`
- *    does. The wordmark's origin lands on 117.5 / 250.5 / …, and
- *    `Math.round` would print 251 where Python (and the committed asset)
- *    print 250.
+ * The identity is "ink": graphite, bone, one ember accent. No neon, no
+ * matrix rain — the wordmark and the chrome carry it. Deterministic
+ * throughout, so repeated runs emit identical bytes.
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// .js extension on a .tsx module: the repo's NodeNext ESM convention (the
-// TS source behind it), same as the tests use.
-import { FONT, FONT_HEIGHT } from '../src/ui/banner.js';
+const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
-// === SECTION === CPython's random (MT19937), seeded like random.seed(7) ===
+const MONO = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
 
-/** One CPython `_random.Random`; `seed(int)` with init_by_array, like CPython. */
-class PyRandom {
-  private mt = new Uint32Array(624);
-  private idx = 625; // force regeneration on first draw
+// The ink tokens — mirrors src/theme.ts `ink`, plus SVG-only surfaces.
+const BG = '#0e1116';
+const PANEL = '#151a21';
+const HAIR = '#2a313c';
+const BONE = '#ece9e4';
+const BONE_BRIGHT = '#ffffff';
+const DIM = '#5c6470';
+const EMBER = '#e8843c';
+const EMBER_SOFT = '#f2a56b';
 
-  /** CPython turns a small non-negative int seed into one key word. */
-  constructor(seed: number) {
-    this.initByArray([seed >>> 0]);
-  }
+// === SECTION === the ANDY wordmark ==========================================
+//
+// Four letters on a 4×7 cell grid. Rows are strings; '#' paints a cell.
+const LETTERS: Record<string, string[]> = {
+  A: ['.##.', '#..#', '#..#', '####', '#..#', '#..#', '#..#'],
+  N: ['#..#', '##.#', '##.#', '#.##', '#.##', '#..#', '#..#'],
+  D: ['###.', '#..#', '#..#', '#..#', '#..#', '#..#', '###.'],
+  Y: ['#..#', '#..#', '#..#', '.##.', '.##.', '.##.', '.##.'],
+};
 
-  private initByArray(key: number[]): void {
-    const mt = this.mt;
-    mt[0] = 19650218;
-    for (let i = 1; i < 624; i++) {
-      mt[i] = (Math.imul(mt[i - 1] ^ (mt[i - 1] >>> 30), 1812433253) + i) >>> 0;
-    }
-    let i = 1;
-    let j = 0;
-    for (let k = Math.max(624, key.length); k > 0; k--) {
-      // mt[i] = (mt[i] ^ ((mt[i-1] ^ (mt[i-1]>>30)) * 1664525)) + key[j] + j
-      // — the multiply binds to the inner XOR only, then the outer XOR, then
-      // the add. Grouping it the other way diverges from CPython on draw #1.
-      mt[i] =
-        ((mt[i]! ^ Math.imul(mt[i - 1]! ^ (mt[i - 1]! >>> 30), 1664525)) +
-          key[j]! +
-          j) >>>
-        0;
-      i++;
-      j++;
-      if (i >= 624) {
-        mt[0] = mt[623];
-        i = 1;
+/** The wordmark as per-letter <g>s of merged cell rects, for stagger. */
+function wordmark(x: number, y: number, cell: number, row: number, gap: number): string {
+  const groups: string[] = [];
+  Object.keys(LETTERS).forEach((ch, li) => {
+    const rects: string[] = [];
+    LETTERS[ch]!.forEach((line, r) => {
+      for (let c = 0; c < line.length; c++) {
+        if (line[c] === '#') {
+          rects.push(`<rect x="${x + li * (4 * cell + gap) + c * cell}" y="${y + r * row}" width="${cell}" height="${row}"/>`);
+        }
       }
-      if (j >= key.length) j = 0;
-    }
-    for (let k = 623; k > 0; k--) {
-      mt[i] = ((mt[i]! ^ Math.imul(mt[i - 1]! ^ (mt[i - 1]! >>> 30), 1566083941)) - i) >>> 0;
-      i++;
-      if (i >= 624) {
-        mt[0] = mt[623];
-        i = 1;
-      }
-    }
-    mt[0] = 0x80000000;
-  }
-
-  private uint32(): number {
-    if (this.idx >= 624) {
-      const mt = this.mt;
-      for (let i = 0; i < 624; i++) {
-        const y = (mt[i] & 0x80000000) | (mt[(i + 1) % 624] & 0x7fffffff);
-        mt[i] = (mt[(i + 397) % 624] ^ (y >>> 1) ^ (y & 1 ? 0x9908b0df : 0)) >>> 0;
-      }
-      this.idx = 0;
-    }
-    let y = this.mt[this.idx++]!;
-    y ^= y >>> 11;
-    y = (y ^ ((y << 7) & 0x9d2c5680)) >>> 0;
-    y = (y ^ ((y << 15) & 0xefc60000)) >>> 0;
-    y = y ^ (y >>> 18);
-    return y >>> 0;
-  }
-
-  /** random.random(): 53 bits from two draws, exactly as CPython builds it. */
-  random(): number {
-    const a = this.uint32() >>> 5;
-    const b = this.uint32() >>> 6;
-    return (a * 67108864.0 + b) * (1.0 / 9007199254740992.0);
-  }
-
-  /** random.getrandbits(k) for 1 <= k <= 32: the top k bits of one draw. */
-  private getrandbits(k: number): number {
-    return this.uint32() >>> (32 - k);
-  }
-
-  /** random._randbelow(n): rejection-sample below n on k = n.bit_length()
-   *  bits. k must be CPython's exactly — a different width draws a different
-   *  number of bits per attempt and the whole sequence diverges. */
-  private randbelow(n: number): number {
-    let k = 1;
-    while ((1 << k) <= n) k++; // bit_length(n) for n >= 1
-    for (;;) {
-      const r = this.getrandbits(k);
-      if (r < n) return r;
-    }
-  }
-
-  /** random.randint(a, b), inclusive. */
-  randint(a: number, b: number): number {
-    return a + this.randbelow(b - a + 1);
-  }
-
-  /** random.uniform(a, b). */
-  uniform(a: number, b: number): number {
-    return a + (b - a) * this.random();
-  }
-
-  /** random.choice(seq). */
-  choice<T>(seq: T[]): T {
-    return seq[this.randbelow(seq.length)]!;
-  }
+    });
+    groups.push(`<g class="ltr" style="animation-delay:${(li * 0.14).toFixed(2)}s">${rects.join('')}</g>`);
+  });
+  return groups.join('\n    ');
 }
 
-// === SECTION === Python number formatting ===
+// === SECTION === hero.svg ====================================================
 
-/**
- * `f"{x:.0f}"` — round half to EVEN, like Python. The banner geometry is
- * full of *.5 origins; Math.round would round them half-up and shift every
- * other glyph a pixel off the committed asset.
- */
-function fmt0(x: number): string {
-  const floor = Math.floor(x);
-  const diff = x - floor;
-  if (diff === 0.5) {
-    // An exact tie: pick the even neighbour.
-    return floor % 2 === 0 ? String(floor) : String(floor + 1);
+function hero(): string {
+  const W = 1280;
+  const H = 460;
+
+  // A fine dot grid, statically painted — the only texture.
+  const dots: string[] = [];
+  for (let gy = 26; gy < H; gy += 46) {
+    for (let gx = 26; gx < W; gx += 46) dots.push(`<circle cx="${gx}" cy="${gy}" r="1.1"/>`);
   }
-  return String(Math.round(x)); // no tie: plain nearest is identical
-}
 
-/** `f"{x:.2f}"` (toFixed matches Python away from exact binary ties, which
- * the arithmetic here — products of non-representable decimals — never hits;
- * kept as a named seam next to fmt0 so the pair reads as one decision). */
-function fmt2(x: number): string {
-  return x.toFixed(2);
-}
+  const wordX = 317;
+  const wordW = 4 * 4 * 34 + 3 * 34; // 646
 
-// === SECTION === the hero ===
-
-const OUT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'docs');
-const [BG, GRID, GREEN, DIM, ACCENT, AMBER] = [
-  '#040704',
-  '#0a1a0d',
-  '#00ff41',
-  '#0c5a22',
-  '#7dffb0',
-  '#ffb000',
-];
-
-const W = 1280;
-const H = 420;
-const word = 'ZIMZILLA'; // the wordmark the committed assets carry — see header
-const GW = 6;
-const SP = 1;
-const cell = 19;
-const totalCells = word.length * GW + (word.length - 1) * SP;
-const x0 = (W - totalCells * cell) / 2;
-const y0 = 126;
-
-const glyphs: string[] = [];
-for (let gi = 0; gi < word.length; gi++) {
-  const ch = word[gi]!;
-  const gx = x0 + gi * (GW + SP) * cell;
-  const rects: string[] = [];
-  const glyph = FONT[ch]!;
-  for (let r = 0; r < FONT_HEIGHT; r++) {
-    const row = glyph[r]!;
-    let c = 0;
-    while (c < row.length) {
-      if (row[c] === '█') {
-        let run = 0;
-        while (c + run < row.length && row[c + run] === '█') run++;
-        rects.push(
-          `<rect x="${fmt0(gx + c * cell)}" y="${y0 + r * cell}" ` +
-            `width="${run * cell}" height="${cell}"/>`,
-        );
-        c += run;
-      } else {
-        c += 1;
-      }
-    }
-  }
-  // base opacity is 1 — the animation only adds a glitch flicker on top.
-  glyphs.push(
-    `<g class="gl" style="animation-delay:${fmt2(gi * 0.11)}s">` + rects.join('') + '</g>',
-  );
-}
-const banner = glyphs.join('\n      ');
-
-const rng = new PyRandom(7);
-const RAIN_DIGITS = '0123456789ABCDEF'.split('');
-const rain = Array.from({ length: 34 }, (_, i) => {
-  // The Python f-string evaluates its placeholders left to right BEFORE the
-  // digit generator joins the expression, so the draw order is x, duration,
-  // delay, digits — not digits first.
-  const x = 18 + i * 37 + rng.randint(-6, 6);
-  const duration = fmt2(rng.uniform(3.4, 8.2));
-  const delay = fmt2(rng.uniform(0, 6));
-  const digits = Array.from({ length: 9 }, () => rng.choice(RAIN_DIGITS)).join('');
-  return (
-    `<text class="rain" x="${x}" y="-150" ` +
-    `style="animation-duration:${duration}s;` +
-    `animation-delay:-${delay}s">` +
-    digits +
-    '</text>'
-  );
-}).join('\n      ');
-
-const subY = 288;
-const heroSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="ZIMZILLA">
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="ANDY">
   <defs>
-    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
-      <feGaussianBlur stdDeviation="7" result="b"/>
-      <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    <linearGradient id="bone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${BONE_BRIGHT}"/>
+      <stop offset="60%" stop-color="${BONE}"/>
+      <stop offset="100%" stop-color="#a8a39b"/>
+    </linearGradient>
+    <linearGradient id="emberline" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="${EMBER}" stop-opacity="0"/>
+      <stop offset="50%" stop-color="${EMBER}" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="${EMBER}" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${EMBER}" stop-opacity="0"/>
+      <stop offset="50%" stop-color="${EMBER}" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="${EMBER}" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
-    <linearGradient id="rainfade" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${GREEN}" stop-opacity="0.9"/>
-      <stop offset="100%" stop-color="${GREEN}" stop-opacity="0.04"/>
-    </linearGradient>
-    <linearGradient id="band" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%"   stop-color="${ACCENT}" stop-opacity="0"/>
-      <stop offset="50%"  stop-color="#ffffff" stop-opacity="0.55"/>
-      <stop offset="100%" stop-color="${ACCENT}" stop-opacity="0"/>
-    </linearGradient>
-    <linearGradient id="scan" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="${GREEN}" stop-opacity="0"/>
-      <stop offset="50%"  stop-color="${GREEN}" stop-opacity="0.42"/>
-      <stop offset="100%" stop-color="${GREEN}" stop-opacity="0"/>
-    </linearGradient>
-    <clipPath id="frame"><rect x="0" y="0" width="${W}" height="${H}" rx="10"/></clipPath>
+    <clipPath id="frame"><rect x="0" y="0" width="${W}" height="${H}" rx="12"/></clipPath>
   </defs>
 
   <style>
-    .rain { font: 16px ui-monospace, Menlo, Consolas, monospace;
-             fill: url(#rainfade); animation: fall linear infinite; }
-    @keyframes fall { from { transform: translateY(0); } to { transform: translateY(${H + 270}px); } }
+    /* Base state fully visible — the pulse only breathes, never hides. */
+    .ltr { fill: url(#bone); animation: breathe 4.2s ease-in-out infinite; }
+    @keyframes breathe { 0%,100% { opacity: 1; } 50% { opacity: 0.82; } }
 
-    /* Base state is fully visible; the loop only dips it briefly. */
-    .gl rect { fill: ${GREEN};
-                animation: flicker 7s steps(1,end) infinite; }
-    @keyframes flicker {
-      0%, 88%   { opacity: 1; }
-      89%       { opacity: 0.62; }
-      90%       { opacity: 1; }
-      91%       { opacity: 0.38; }
-      92%, 100% { opacity: 1; }
-    }
+    .rule { animation: ember 4.6s ease-in-out infinite; }
+    @keyframes ember { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
 
-    .halo { animation: halo 3.6s ease-in-out infinite; }
-    @keyframes halo { 0%,100% { opacity: .45; } 50% { opacity: .95; } }
-
-    .band { animation: band 3.8s cubic-bezier(.4,0,.2,1) infinite; }
-    @keyframes band { 0% { transform: translateX(-${W}px); }
-                       55%,100% { transform: translateX(${W}px); } }
-
-    .sweep { animation: sweep 5.4s linear infinite; }
-    @keyframes sweep { 0% { transform: translateY(-90px); } 100% { transform: translateY(${H + 90}px); } }
+    .scan { animation: scan 7s linear infinite; }
+    @keyframes scan { 0% { transform: translateY(-140px); } 100% { transform: translateY(600px); } }
 
     .cur { animation: blink 1.05s steps(1,end) infinite; }
     @keyframes blink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
 
-    .tag, .meta { paint-order: stroke; stroke: ${BG}; stroke-width: 5;
-                   stroke-linejoin: round; }
-    .tag { font: 600 15px ui-monospace, Menlo, Consolas, monospace;
-            letter-spacing: 3.2px; fill: ${ACCENT}; }
-    .meta { font: 13px ui-monospace, Menlo, Consolas, monospace;
-             letter-spacing: 1.6px; fill: ${DIM}; }
+    .tag  { font: 600 16px ${MONO}; letter-spacing: 3.4px; fill: ${BONE};
+             paint-order: stroke; stroke: ${BG}; stroke-width: 6; stroke-linejoin: round; }
+    .meta { font: 13px ${MONO}; letter-spacing: 1.8px; fill: ${DIM}; }
 
     @media (prefers-reduced-motion: reduce) {
-      .rain, .gl rect, .band, .sweep, .cur, .halo { animation: none; }
+      .ltr, .rule, .scan, .cur { animation: none; }
     }
   </style>
 
   <g clip-path="url(#frame)">
     <rect width="${W}" height="${H}" fill="${BG}"/>
-    <g opacity="0.5">${Array.from({ length: Math.ceil(H / 26) }, (_, k) => `<line x1="0" y1="${k * 26}" x2="${W}" y2="${k * 26}" stroke="${GRID}"/>`).join('')}</g>
-    <g opacity="0.32">${rain}</g>
+    <g fill="${HAIR}" opacity="0.55">${dots.join('')}</g>
 
-    <g filter="url(#glow)" class="halo">${banner}</g>
+    <g>
+    ${wordmark(wordX, 86, 34, 26, 34)}
+    </g>
 
-    <rect class="band" x="0" y="${y0 - 16}" width="300" height="${FONT_HEIGHT * cell + 32}"
-          fill="url(#band)" style="mix-blend-mode:screen"/>
-    <rect class="sweep" x="0" y="0" width="${W}" height="90" fill="url(#scan)"/>
+    <!-- ember rule under the wordmark: the one accent, and it breathes -->
+    <rect class="rule" x="${wordX}" y="290" width="${wordW}" height="3" rx="1.5" fill="url(#emberline)"/>
 
-    <text class="tag" x="${fmt0(W / 2)}" y="${subY}" text-anchor="middle">net.shell // autonomous coding agent</text>
-    <rect class="cur" x="${fmt0(W / 2 + 232)}" y="${subY - 15}" width="10" height="18" fill="${ACCENT}"/>
+    <rect class="scan" x="0" y="0" width="${W}" height="140" fill="url(#beam)"/>
 
-    <text class="meta" x="${fmt0(W / 2)}" y="332" text-anchor="middle">terminal-native · streaming · tool-using · scope-aware</text>
-    <text class="meta" x="${fmt0(W / 2)}" y="360" text-anchor="middle" opacity="0.8">by Mr-Destroyer / ZIM</text>
+    <text class="tag" x="${W / 2}" y="336" text-anchor="middle">andy // autonomous terminal agent</text>
+    <rect class="cur" x="${W / 2 + 268}" y="321" width="10" height="19" fill="${EMBER_SOFT}"/>
 
-    <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="10" fill="none" stroke="${DIM}" stroke-opacity="0.55"/>
+    <text class="meta" x="${W / 2}" y="378" text-anchor="middle">streaming · tool-using · scope-aware · session-kept</text>
+    <text class="meta" x="${W / 2}" y="406" text-anchor="middle" opacity="0.85">by Mr-Destroyer / ZIM</text>
+
+    <!-- corner ticks: the terminal frame hinted, not drawn -->
+    <g stroke="${DIM}" stroke-width="2" opacity="0.8">
+      <path d="M 18 34 V 18 H 34" fill="none"/>
+      <path d="M ${W - 18} 34 V 18 H ${W - 34}" fill="none"/>
+      <path d="M 18 ${H - 34} V ${H - 18} H 34" fill="none"/>
+      <path d="M ${W - 18} ${H - 34} V ${H - 18} H ${W - 34}" fill="none"/>
+    </g>
+    <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="12" fill="none" stroke="${HAIR}"/>
   </g>
 </svg>
 `;
-
-// === SECTION === the terminal ===
-
-const LINES: [kind: string, text: string][] = [
-  ['prompt', 'recon the target and map the attack surface'],
-  ['dim', '· enumerating · decrypting · probing'],
-  ['tool', 'bash  nmap -sV -p- target.example.com'],
-  ['ok', '✓ 9 hosts up · 412 open ports · 0 blocked'],
-  ['tool', 'write_file  findings/attack-surface.md'],
-  ['ok', '✓ diff applied  +84 −0'],
-  ['info', 'turn 3 · iter 7 · $0.0142 · 18.4k tok'],
-];
-
-function esc(text: string): string {
-  return text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }
 
-function terminalSvg(): string {
-  const W = 1100;
-  const H = 430;
-  const pad = 34;
-  const lh = 34;
-  const top = 104;
-  const rows: string[] = [];
-  for (let i = 0; i < LINES.length; i++) {
-    const [kind, text] = LINES[i]!;
-    const delay = 0.55 + i * 0.62;
-    const color = { prompt: GREEN, dim: DIM, tool: ACCENT, ok: GREEN, info: AMBER }[kind]!;
-    const prefix = kind === 'prompt' ? '› ' : kind === 'ok' || kind === 'dim' ? '  ' : '$ ';
-    rows.push(
-      `<text class="ln" x="${pad}" y="${top + i * lh}" fill="${color}" ` +
-        `style="animation-delay:${fmt2(delay)}s">${prefix}${esc(text)}</text>`,
-    );
-  }
-  const body = rows.join('\n      ');
-  const lastY = top + (LINES.length - 1) * lh;
+// === SECTION === terminal.svg ===============================================
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="ZIMZILLA session">
+function terminal(): string {
+  const W = 1100;
+  const H = 470;
+  const line = (
+    y: number,
+    fill: string,
+    text: string,
+    delay: number,
+    extra = '',
+  ) =>
+    `  <text class="ln" x="36" y="${y}" fill="${fill}" style="animation-delay:${delay.toFixed(2)}s"${extra ? ` ${extra}` : ''}>${text}</text>`;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="ANDY session">
   <defs>
-    <clipPath id="tframe"><rect x="0" y="0" width="${W}" height="${H}" rx="12"/></clipPath>
+    <clipPath id="tframe"><rect x="0" y="0" width="${W}" height="${H}" rx="14"/></clipPath>
     <filter id="tglow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="3.5" result="b"/>
+      <feGaussianBlur stdDeviation="3" result="b"/>
       <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
   <style>
     /* Opacity is never animated: a staggered fade would leave every line
-       invisible during its own delay, which is exactly what a renderer that
-       ignores animation (or samples frame zero) would show. Only the slide
-       moves, so the text is legible in every renderer and still animates in. */
-    .ln { font: 16px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-           animation: rise .5s ease-out backwards; }
-    @keyframes rise { from { transform: translateY(8px); }
-                       to   { transform: translateY(0); } }
+       invisible during its own delay — exactly what a renderer that ignores
+       animation (or samples frame zero) would show. Only the slide moves. */
+    .ln { font: 15px ${MONO}; animation: rise .5s ease-out backwards; }
+    @keyframes rise { from { transform: translateY(8px); } to { transform: translateY(0); } }
     .cur { animation: blink 1.05s steps(1,end) infinite; }
     @keyframes blink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
-    .title { font: 600 14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-              letter-spacing: 2px; fill: ${ACCENT}; }
+    .title { font: 600 13px ${MONO}; letter-spacing: 2px; fill: ${BONE}; }
     @media (prefers-reduced-motion: reduce) {
-      .ln { animation: none; opacity: 1; } .cur { animation: none; }
+      .ln { animation: none; } .cur { animation: none; }
     }
   </style>
 
   <g clip-path="url(#tframe)">
     <rect width="${W}" height="${H}" fill="${BG}"/>
-    <rect width="${W}" height="46" fill="#0a140c"/>
+    <rect width="${W}" height="46" fill="${PANEL}"/>
     <circle cx="28" cy="23" r="6.5" fill="#ff5f57"/>
     <circle cx="50" cy="23" r="6.5" fill="#febc2e"/>
     <circle cx="72" cy="23" r="6.5" fill="#28c840"/>
-    <text class="title" x="${fmt0(W / 2)}" y="28" text-anchor="middle">zimzilla — net.shell</text>
-    <line x1="0" y1="46" x2="${W}" y2="46" stroke="${DIM}" stroke-opacity="0.6"/>
+    <text class="title" x="${W / 2}" y="28" text-anchor="middle">andy — shell</text>
+    <line x1="0" y1="46" x2="${W}" y2="46" stroke="${HAIR}"/>
 
-    <text x="${pad}" y="76" fill="${DIM}" style="font:13px ui-monospace,Menlo,monospace;letter-spacing:1.4px">
-      ◆ ZIMZILLA   ◆ AUTO   ◆ deepseek-v4.1-flash   ▸ /home/zim   ◈ scope off   ⛨ sandbox on
+    <text x="36" y="78" fill="${DIM}" style="font:13px ${MONO};letter-spacing:1.2px">
+      ◆ ANDY · [AUTO] · ● deepseek-v4.1-flash · ▸ ~/work/api · scope off · sandbox on
     </text>
 
-      ${body}
+${line(112, BONE, '› map every route this API exposes, then write it up', 0.55)}
+${line(140, '#7c8592', '  ✻ thinking  (+31 earlier)', 1.05, 'font-style="italic"')}
+${line(164, '#7c8592', '  openapi.json in /public is stale — grep the handlers instead…', 1.25, 'font-style="italic"')}
+${line(196, EMBER_SOFT, '$ bash  grep -rhoE "@(Get|Post|Put|Delete)\\(\'[^\']+" src/', 1.75)}
+${line(224, BONE, '  ✓ 47 routes · 6 auth-gated · 2 admin · 1 upload', 2.25)}
+${line(256, EMBER_SOFT, '$ write_file  findings/routes.md', 2.85)}
+${line(284, BONE, '  ✓ diff applied  +61 −0', 3.35)}
+${line(316, '#f5b25e', '$ turn 3 · iter 7 · $0.0142 · 18.4k tok', 3.95)}
 
-    <rect class="cur" x="${pad + 2}" y="${lastY + 22}" width="9" height="17" fill="${GREEN}" filter="url(#tglow)"/>
+    <rect class="cur" x="38" y="338" width="9" height="17" fill="${BONE}" filter="url(#tglow)"/>
 
-    <line x1="0" y1="${H - 42}" x2="${W}" y2="${H - 42}" stroke="${DIM}" stroke-opacity="0.6"/>
-    <text x="${pad}" y="${H - 17}" fill="${DIM}" style="font:13px ui-monospace,Menlo,monospace">
-      ● deepseek-v4.1-flash   |   tok ↑18.4k ↓612   |   $ 0.0142   |   turn 3   |   ● idle
+    <line x1="0" y1="424" x2="${W}" y2="424" stroke="${HAIR}"/>
+    <text x="36" y="448" fill="${DIM}" style="font:13px ${MONO}">
+      ● deepseek-v4.1-flash · tok ↑18.4k ↓612 · $ 0.0142 · turn 3 · 00:47 · ● idle
     </text>
-    <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="12" fill="none" stroke="${DIM}" stroke-opacity="0.55"/>
+    <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="14" fill="none" stroke="${HAIR}"/>
   </g>
 </svg>
 `;
 }
 
-fs.writeFileSync(path.join(OUT, 'hero.svg'), heroSvg);
-fs.writeFileSync(path.join(OUT, 'terminal.svg'), terminalSvg());
-console.log('wrote docs/hero.svg and docs/terminal.svg');
+// === SECTION === write =======================================================
+
+for (const [name, svg] of [
+  ['hero.svg', hero()],
+  ['terminal.svg', terminal()],
+] as const) {
+  const out = path.join(ROOT, 'docs', name);
+  fs.writeFileSync(out, svg, 'utf8');
+  process.stdout.write(`wrote ${path.relative(ROOT, out)} (${svg.length} bytes)\n`);
+}
