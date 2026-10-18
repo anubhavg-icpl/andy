@@ -49,8 +49,8 @@ export const STAGE_LABEL: Record<Stage, string> = {
 // Block glyphs, low to high. Index = intensity.
 const SPARK = ' ▁▂▃▄▅▆▇█';
 // Fill glyphs for the context gauge.
-const FULL = '▓';
-const EMPTY = '░';
+const FULL = '█';
+const EMPTY = '·';
 
 // === SECTION === rail resize (RailResizeMixin → useRailResize) ===
 //
@@ -205,7 +205,7 @@ export function loopRailNode(palette: Palette, state: LoopRailState, width = 14)
       // Connector: bright only up to the active node.
       const below = STAGES[i + 1] === state.stage;
       nodes.push(
-        <Text key={`conn-${stage}`} color={below ? p.accent : p.dim}>{'  │'}</Text>,
+        <Text key={`conn-${stage}`} color={below ? p.accent : p.dim}>{'  ┆'}</Text>,
       );
     }
   }
@@ -269,7 +269,7 @@ export function loopRailNode(palette: Palette, state: LoopRailState, width = 14)
     <Box
       flexDirection="column"
       width={width}
-      borderStyle="single"
+      borderStyle="round"
       borderRight
       borderColor={p.dim}
       paddingX={1}
@@ -282,7 +282,7 @@ export function loopRailNode(palette: Palette, state: LoopRailState, width = 14)
       {state.trail.length > 0 ? (
         <>
           <Blank />
-          <Text color={p.dim}>│{state.trail.map((s) => glyphFor(s)).join('')}</Text>
+          <Text color={p.dim}>┆{state.trail.map((s) => glyphFor(s)).join('')}</Text>
         </>
       ) : null}
     </Box>
@@ -692,7 +692,7 @@ export const TelemetryRail = forwardRef<TelemetryRailHandle, TelemetryRailProps>
       <Box
         flexDirection="column"
         width={railWidth}
-        borderStyle="single"
+        borderStyle="round"
         borderLeft
         borderColor={p.dim}
       >

@@ -124,12 +124,12 @@ function usageError(message: string): never {
 function helpText(): string {
   return [
     'usage: andy [-h] [--model MODEL] [--workdir DIR] [--allow PATH] [--deny PATH]',
-    '            [--scope PATH] [--unsafe] [--theme {green,amber,cyan,system}]',
+    '            [--scope PATH] [--unsafe] [--theme {' + THEME_NAMES.join(',') + '}]',
     '            [--rain] [--no-rain] [--no-think] [--mode MODE] [--agents PATH]',
     '            [--max-tokens N] [--no-auto-compact] [--no-update] [--list-models]',
     '            [--panes] [--resume SESSION] [--version]',
     '',
-    'Andy — an agentic coding CLI with a green-on-black hacker TUI.',
+    'Andy — an agentic coding CLI with an ink-and-ember terminal TUI.',
     '',
     'options:',
     '  -m, --model MODEL         model name (default: ' + DEFAULT_MODEL + ')',
@@ -502,7 +502,7 @@ export async function main(argv?: string[]): Promise<number> {
 
   // Which theme to open with. An explicit --theme wins; failing that, whatever
   // was last chosen with /theme, so a restart lands back on it; failing both,
-  // the config default (green). fromEnv ignores undefined overrides, so
+  // the config default. fromEnv ignores undefined overrides, so
   // resolving the precedence into one value here is what makes the remembered
   // choice take effect — and what keeps `--theme` authoritative over it.
   const theme = args.theme ?? currentTheme();

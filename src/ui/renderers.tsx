@@ -332,7 +332,7 @@ interface PanelProps {
 
 function Panel({ title, subtitle, border, children }: PanelProps): ReactNode {
   return (
-    <Box flexDirection="column" borderStyle="single" borderColor={border} paddingX={1}>
+    <Box flexDirection="column" borderStyle="round" borderColor={border} paddingX={1}>
       {title !== undefined || subtitle !== undefined ? (
         <Box justifyContent="space-between" flexShrink={0}>
           {title !== undefined ? <Text>{title}</Text> : <Text> </Text>}
@@ -688,7 +688,7 @@ export function diffPanel(
 
 export function userPromptBlock(text: string, palette: Palette): ReactNode {
   return (
-    <Box borderStyle="single" borderColor={palette.primary} paddingX={1}>
+    <Box borderStyle="round" borderColor={palette.primary} paddingX={1}>
       <Text bold color={palette.accent}>❯ </Text>
       <Text bold color={palette.primary}>{text}</Text>
     </Box>

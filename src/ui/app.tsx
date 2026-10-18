@@ -115,16 +115,16 @@ export interface Palette {
   glow: string;
 }
 
-/** Placeholder until the theme module lands; identical to PALETTES["green"]. */
-const GREEN_PLACEHOLDER: Palette = {
-  name: 'zim-green',
+/** Pre-hydration placeholder; identical to PALETTES[DEFAULT_THEME] (ink). */
+const INK_PLACEHOLDER: Palette = {
+  name: 'zim-ink',
   bg: '#000000',
-  primary: '#00ff41',
-  dim: '#0b6e2a',
-  accent: '#00ffaa',
-  red: '#ff2d2d',
-  amber: '#ffb000',
-  glow: '#00ff41',
+  primary: '#ece9e4',
+  dim: '#5c6470',
+  accent: '#e8843c',
+  red: '#ff5d5d',
+  amber: '#f5b25e',
+  glow: '#ece9e4',
 };
 
 export interface TerminalColorsLike {
@@ -303,6 +303,7 @@ export interface WidgetsModule {
     /** Drives the elapsed clock — bumped once a second by the app. */
     tick: number;
   }>;
+  WelcomeHint: FC<{ palette: Palette }>;
   ChatPane: HandleWidget<{ palette: Palette; rain?: boolean }, ChatPaneHandle>;
   ZimPane: HandleWidget<{ palette: Palette }, ZimPaneHandle>;
   NEWLINE_GLYPH?: string;
@@ -1297,7 +1298,7 @@ export function AndyApp(props: AndyAppProps) {
   const cfgRef = useRef(props.cfg);
   const modsRef = useRef<Mods | null>(null);
   const agentRef = useRef<AgentLike | null>(null);
-  const paletteRef = useRef<Palette>(GREEN_PLACEHOLDER);
+  const paletteRef = useRef<Palette>(INK_PLACEHOLDER);
   const themeNameRef = useRef(props.cfg.theme);
   const rainOnRef = useRef(props.cfg.rain);
   const busyRef = useRef(false);
@@ -1336,7 +1337,7 @@ export function AndyApp(props: AndyAppProps) {
   const [mods, setMods] = useState<Mods | null>(null);
   const [ready, setReady] = useState(false);
   const [booted, setBooted] = useState(false);
-  const [palette, setPalette] = useState<Palette>(GREEN_PLACEHOLDER);
+  const [palette, setPalette] = useState<Palette>(INK_PLACEHOLDER);
   const [themeName, setThemeName] = useState(props.cfg.theme);
   const [rainOn, setRainOn] = useState(props.cfg.rain);
   const [busy, setBusy] = useState(false);
@@ -1507,6 +1508,22 @@ export function AndyApp(props: AndyAppProps) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ---- first-run hint (fresh sessions only) -----------------------------------
+  //
+  // One block in the transcript, never an overlay: it scrolls away as soon
+  // as real work starts, and a resumed session (which already knows) never
+  // sees it. Guarded by a ref rather than state so a re-render storm around
+  // boot cannot write it twice.
+  const hintedRef = useRef(false);
+  useEffect(() => {
+    if (!ready || resume || hintedRef.current) return;
+    const Hint = mods?.widgets?.WelcomeHint;
+    if (!Hint || !paletteRef.current) return;
+    hintedRef.current = true;
+    chatRef.current?.writeBlock(<Hint palette={paletteRef.current} />);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready]);
 
   // ---- boot checks + boot completion ------------------------------------------
   const bootChecks = (): [string, string, boolean][] => {

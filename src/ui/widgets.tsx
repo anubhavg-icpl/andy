@@ -304,14 +304,15 @@ export function HeaderBar(props: HeaderBarProps): ReactNode {
   const loud = m.loud === true;
   const label = m.label ?? mode.toUpperCase();
 
+  const SEP = ' · ';
   const head: Seg[] = [
-    { text: '◈ ANDY', color: p.primary, bold: true },
-    { text: '  │  ', color: p.dim },
+    { text: '◆ ANDY', color: p.primary, bold: true },
+    { text: SEP, color: p.dim },
     loud
-      ? { text: `◆ ${label} `, color: 'white', bg: p.red, bold: true }
-      : { text: `◆ ${label} `, color: p.accent, bold: true },
-    { text: '  │  ', color: p.dim },
-    { text: '◉ ', color: p.accent },
+      ? { text: `[${label}]`, color: 'white', bg: p.red, bold: true }
+      : { text: `[${label}]`, color: p.accent, bold: true },
+    { text: SEP, color: p.dim },
+    { text: '● ', color: p.accent },
     { text: props.model, color: p.accent, bold: true },
   ];
 
@@ -326,23 +327,23 @@ export function HeaderBar(props: HeaderBarProps): ReactNode {
   // goes first, then the cwd, and the sandbox indicator — which is a
   // security fact, not decoration — goes last.
   let tail: Seg[] = [
-    { text: '⛨ sandbox on', color: p.dim },
-    { text: `⌂ ${props.cwd}`, color: p.primary },
+    { text: 'sandbox on', color: p.dim },
+    { text: `▸ ${props.cwd}`, color: p.primary },
     { text: `theme:${props.themeName}`, color: p.dim },
   ];
   // The sandbox being OFF is not cosmetic — it never gets dropped.
   if (props.unsafe) {
     tail = [
       { text: '⚠ SANDBOX OFF', color: 'white', bg: p.red, bold: true },
-      ...tail.filter((f) => f.text !== '⛨ sandbox on'),
+      ...tail.filter((f) => f.text !== 'sandbox on'),
     ];
   }
 
   // Scope sits between the fixed head and the droppable tail.
   const fixed: Seg[] = [
     ...head,
-    { text: '  │  ', color: p.dim },
-    { text: '⌖ scope ', color: p.dim },
+    { text: SEP, color: p.dim },
+    { text: 'scope ', color: p.dim },
     { text: props.scopeBadge ?? 'off', color: scopeOk ? p.accent : p.red, bold: true },
   ];
 
@@ -350,7 +351,7 @@ export function HeaderBar(props: HeaderBarProps): ReactNode {
   while (tail.length > 0) {
     const attempt: Seg[] = [...fixed];
     for (const f of tail) {
-      attempt.push({ text: '  │  ', color: p.dim });
+      attempt.push({ text: SEP, color: p.dim });
       attempt.push(f);
     }
     if (segWidth(attempt) <= limit) {
@@ -574,6 +575,8 @@ export interface StatusBarProps {
 /** Bottom bar: tokens, cost, turns, iteration, elapsed, activity. */
 export function StatusBar(props: StatusBarProps): ReactNode {
   const p = props.palette;
+  const { columns } = useWindowSize();
+  const limit = columns || 200;
   const mountStart = useRef(performance.now());
   const started = props.startedAt ?? mountStart.current;
   const elapsed = Math.max(0, Math.floor((performance.now() - started) / 1000));
@@ -588,33 +591,86 @@ export function StatusBar(props: StatusBarProps): ReactNode {
   const activity = props.activity ?? 'idle';
   const busy = props.busy ?? false;
 
+  // The same measured-fit discipline as the header: the row is one line and
+  // the terminal clips overflow, so without this the rightmost field — the
+  // activity, the one live thing on the bar — dies first on a narrow window.
+  // The core (model, tokens, cost, turn, activity) always stays; the clock
+  // and then the iteration count shed until it fits.
+  const core: Seg[] = [
+    { text: '◉ ', color: p.accent, bold: true },
+    { text: model, color: p.primary },
+    { text: ' · ', color: p.dim },
+    { text: 'tok ', color: p.dim },
+    { text: `↑${fmtK(inputTokens)}`, color: p.primary },
+    { text: ' ', color: p.dim },
+    { text: `↓${fmtK(outputTokens)}`, color: p.accent },
+    { text: ' · ', color: p.dim },
+    { text: '$ ', color: p.dim },
+    { text: cost.toFixed(4), color: p.accent, bold: true },
+    { text: ' · ', color: p.dim },
+    { text: `turn ${turns}`, color: p.primary },
+    { text: ' · ', color: p.dim },
+    {
+      text: busy ? `⟳ ${activity}` : `● ${activity}`,
+      color: busy ? p.accent : p.dim,
+      bold: busy,
+    },
+  ];
+  const extras: Seg[] = [
+    { text: `iter ${iterations}`, color: p.dim },
+    {
+      text: `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`,
+      color: p.primary,
+    },
+  ];
+  const withSep = (seg: Seg): Seg[] => [{ text: ' · ', color: p.dim }, seg];
+  let segs: Seg[] = [...core, ...withSep(extras[0]!), ...withSep(extras[1]!)];
+  while (segs.length > 0 && segWidth(segs) > limit && extras.length > 0) {
+    extras.pop(); // clock first, then iter
+    segs = extras.length > 0 ? [...core, ...extras.flatMap(withSep)] : [...core];
+  }
+
+  return <Box paddingX={1}>{renderSegs(segs)}</Box>;
+}
+
+// === SECTION === first-run hint ===
+
+export interface WelcomeHintProps {
+  palette: Palette;
+}
+
+/** The one block a fresh session opens with: what this is, and the five keys.
+ *
+ * Written into the transcript (not an overlay) so it scrolls away naturally
+ * once real work starts — a persistent banner would charge rent on every
+ * screen for information that is only new once. A resumed session never
+ * shows it: that operator already knows.
+ */
+export function WelcomeHint(props: WelcomeHintProps): ReactNode {
+  const p = props.palette;
   return (
-    <Box paddingX={1}>
+    <Box flexDirection="column" borderStyle="round" borderColor={p.dim} paddingX={1}>
       <Text>
-        <Text bold color={p.accent}>◉ </Text>
-        <Text color={p.primary}>{model}</Text>
-        <Text color={p.dim}>{'  │  '}</Text>
-        <Text color={p.dim}>tok </Text>
-        <Text color={p.primary}>{`↑${fmtK(inputTokens)}`}</Text>
-        <Text color={p.dim}> </Text>
-        <Text color={p.accent}>{`↓${fmtK(outputTokens)}`}</Text>
-        <Text color={p.dim}>{'  │  '}</Text>
-        <Text color={p.dim}>$ </Text>
-        <Text bold color={p.accent}>{cost.toFixed(4)}</Text>
-        <Text color={p.dim}>{'  │  '}</Text>
-        <Text color={p.primary}>{`turn ${turns}`}</Text>
-        <Text color={p.dim}>{'  │  '}</Text>
-        <Text color={p.dim}>{`iter ${iterations}`}</Text>
-        <Text color={p.dim}>{'  │  '}</Text>
-        <Text color={p.primary}>
-          {`${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`}
-        </Text>
-        <Text color={p.dim}>{'  │  '}</Text>
-        {busy ? (
-          <Text bold color={p.accent}>{`⟳ ${activity}`}</Text>
-        ) : (
-          <Text color={p.dim}>{`● ${activity}`}</Text>
-        )}
+        <Text bold color={p.primary}>◆ andy</Text>
+        <Text color={p.dim}> — an autonomous coding agent in your terminal</Text>
+      </Text>
+      <Blank />
+      <Text color={p.dim}>Describe a task in plain language; it reads, runs, edits and verifies.</Text>
+      <Text>
+        <Text color={p.accent}>/</Text>
+        <Text color={p.dim}> commands · </Text>
+        <Text color={p.accent}>@</Text>
+        <Text color={p.dim}> attach a file · </Text>
+        <Text color={p.accent}>ctrl+k</Text>
+        <Text color={p.dim}> palette</Text>
+      </Text>
+      <Text>
+        <Text color={p.accent}>ctrl+c</Text>
+        <Text color={p.dim}> interrupt · </Text>
+        <Text color={p.accent}>ctrl+d</Text>
+        <Text color={p.dim}> exit · </Text>
+        <Text color={p.accent}>/help</Text>
+        <Text color={p.dim}> everything else</Text>
       </Text>
     </Box>
   );
@@ -923,7 +979,7 @@ export const ZimPane = forwardRef<ZimPaneHandle, ZimPaneProps>(function ZimPane(
     let findings = 0;
     for (const n of huntSeverity.values()) findings += n;
     return (
-      <Box flexDirection="column" width={14} borderStyle="single" borderLeft borderColor={p.dim}>
+      <Box flexDirection="column" width={14} borderStyle="round" borderLeft borderColor={p.dim}>
         <Text bold color={p.accent}> ANDY</Text>
         <Text color={p.dim}> [+][×]</Text>
         {label ? (
@@ -948,7 +1004,7 @@ export const ZimPane = forwardRef<ZimPaneHandle, ZimPaneProps>(function ZimPane(
     for (const n of huntSeverity.values()) found += n;
     const agents = [...huntAgents.entries()].slice(-HUNT_SLOTS);
     return (
-      <Box flexDirection="column" width={36} borderStyle="single" borderLeft borderColor={p.dim} paddingX={1}>
+      <Box flexDirection="column" width={36} borderStyle="round" borderLeft borderColor={p.dim} paddingX={1}>
         <Text>
           <Text bold color={p.accent}>ANDY-PANE</Text>
           <Text color={p.dim}>{'  [–][×]'}</Text>
@@ -1047,7 +1103,7 @@ export const ZimPane = forwardRef<ZimPaneHandle, ZimPaneProps>(function ZimPane(
 
   // ---- phish view -------------------------------------------------------
   return (
-    <Box flexDirection="column" width={36} borderStyle="single" borderLeft borderColor={p.dim} paddingX={1}>
+    <Box flexDirection="column" width={36} borderStyle="round" borderLeft borderColor={p.dim} paddingX={1}>
       <Text>
         <Text bold color={p.accent}>ANDY-PANE</Text>
         <Text color={p.dim}>{'  [–][×]'}</Text>

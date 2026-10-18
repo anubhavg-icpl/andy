@@ -23,6 +23,7 @@ import { homedir } from 'node:os';
 import path from 'node:path';
 import { expandTilde } from './shared.js';
 import type { Scope } from './scope.js';
+import { DEFAULT_THEME } from './theme.js';
 
 // === SECTION === model registry ===
 //
@@ -330,7 +331,7 @@ export class Config {
   maxRounds: number = 400;
   bashTimeout: number = 120;
   maxOutputChars: number = 20_000;
-  theme: string = 'green';
+  theme: string = DEFAULT_THEME;
   /**
    * Rain is decorative. By default the boot screen shows it (nothing to read
    * there yet) and the shell does not, so the transcript stays legible.

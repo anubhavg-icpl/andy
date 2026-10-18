@@ -43,6 +43,7 @@ import { execute, needsPermission, summariseCall, TOOL_NAMES } from '../src/tool
 import * as websearch from '../src/websearch.js';
 import { LOGFARE_MODELS } from '../src/sources.js';
 import {
+  DEFAULT_THEME,
   PALETTES,
   SYSTEM_THEME,
   THEME_NAMES,
@@ -1109,25 +1110,26 @@ describe('test_system_theme', () => {
     expect(pal.glow === pal.primary, 'theme: glow follows primary, as the green palette\'s does').toBe(true);
 
     // A partial reply degrades field by field, not all at once: no ANSI
-    // slots answered here, so every role falls through to green's value
-    // while the background — the one thing that *was* reported — is adopted.
+    // slots answered here, so every role falls through to the default
+    // palette's value while the background — the one thing that *was*
+    // reported — is adopted.
     const pp = systemPalette(parseColors(b('\x1b]11;rgb:1010/1313/1515\x1b\\')));
     expect(
       [pp.dim, pp.accent, pp.red, pp.amber],
-      "theme: a missing ANSI slot falls back to green's value",
+      "theme: a missing ANSI slot falls back to the default palette's value",
     ).toEqual([
-      PALETTES['green']!.dim,
-      PALETTES['green']!.accent,
-      PALETTES['green']!.red,
-      PALETTES['green']!.amber,
+      PALETTES[DEFAULT_THEME]!.dim,
+      PALETTES[DEFAULT_THEME]!.accent,
+      PALETTES[DEFAULT_THEME]!.red,
+      PALETTES[DEFAULT_THEME]!.amber,
     ]);
     expect(pp.bg, 'theme: a partially-answered terminal still gets its background').toBe('#101315');
-    expect(systemPalette(null), 'theme: no colours at all gives exactly the green palette').toBe(PALETTES['green']!);
+    expect(systemPalette(null), 'theme: no colours at all gives exactly the default palette').toBe(PALETTES[DEFAULT_THEME]!);
   });
 
   it('the light rule (the operator\'s decision)', () => {
     const b = (s: string): Buffer => Buffer.from(s, 'latin1');
-    // The three fixed palettes refuse a light background — neon on white is
+    // The fixed palettes refuse a light background — neon on white is
     // unreadable. `system` does not: its colours come from the terminal, so
     // contrast is the theme author's problem, and refusing would mean the UI
     // ignoring the very wallpaper it was asked to match.
@@ -1149,8 +1151,8 @@ describe('test_system_theme', () => {
     ).toBe(true);
     expect(
       THEME_NAMES,
-      'theme: system is offered alongside the three fixed ones',
-    ).toEqual(['green', 'amber', 'cyan', 'system']);
+      'theme: system is offered alongside the fixed ones',
+    ).toEqual(['ink', 'green', 'amber', 'cyan', 'violet', 'system']);
   });
 
   it('persistence: the choice survives a restart', async () => {
@@ -1211,7 +1213,7 @@ describe('test_system_theme', () => {
             return launchThemes.themes[launchThemes.themes.length - 1]!;
           };
 
-          expect(await launched(), 'theme: a fresh launch opens on green').toBe('green');
+          expect(await launched(), 'theme: a fresh launch opens on ink').toBe('ink');
           setCurrentTheme('amber');
           expect(
             await launched(),
@@ -1240,7 +1242,7 @@ describe('test_system_theme', () => {
           // A name left by another build falls through to green rather than
           // being handed to getPalette, which has no palette for it.
           writeFileSync(path.join(home, 'current-theme'), 'vaporwave\n');
-          expect(await launched(), 'theme: a stale name falls through to green').toBe('green');
+          expect(await launched(), 'theme: a stale name falls through to the default').toBe('ink');
         },
       );
     });

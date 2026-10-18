@@ -64,12 +64,22 @@ export class Palette {
 }
 
 export const PALETTES: Record<string, Palette> = {
+  ink: new Palette({
+    name: 'zim-ink',
+    bg: '#000000',
+    primary: '#ece9e4',
+    dim: '#5c6470',
+    accent: '#e8843c',
+    red: '#ff5d5d',
+    amber: '#f5b25e',
+    glow: '#ece9e4',
+  }),
   green: new Palette({
     name: 'zim-green',
     bg: '#000000',
     primary: '#00ff41',
-    dim: '#0b6e2a',
-    accent: '#00ffaa',
+    dim: '#1f6f3a',
+    accent: '#8affb9',
     red: '#ff2d2d',
     amber: '#ffb000',
     glow: '#00ff41',
@@ -78,8 +88,8 @@ export const PALETTES: Record<string, Palette> = {
     name: 'zim-amber',
     bg: '#000000',
     primary: '#ffb000',
-    dim: '#7a5200',
-    accent: '#ffd166',
+    dim: '#8a6220',
+    accent: '#ffd98a',
     red: '#ff2d2d',
     amber: '#ffe08a',
     glow: '#ffb000',
@@ -88,15 +98,25 @@ export const PALETTES: Record<string, Palette> = {
     name: 'zim-cyan',
     bg: '#000000',
     primary: '#00ffd5',
-    dim: '#00706a',
-    accent: '#7dfff0',
+    dim: '#1b7f7a',
+    accent: '#a5fff1',
     red: '#ff2d2d',
     amber: '#ffb000',
     glow: '#00ffd5',
   }),
+  violet: new Palette({
+    name: 'zim-violet',
+    bg: '#000000',
+    primary: '#bd5cff',
+    dim: '#5f2f91',
+    accent: '#e2b8ff',
+    red: '#ff2d2d',
+    amber: '#ffb000',
+    glow: '#bd5cff',
+  }),
 };
 
-export const DEFAULT_THEME = 'green';
+export const DEFAULT_THEME = 'ink';
 
 /**
  * The theme that takes its colours from the terminal rather than declaring
@@ -200,24 +220,28 @@ export function setCurrentTheme(name: string): void {
 
 // === SECTION === spinner verbs, worker colours, tool icons ===
 
-/** Hacker verbs cycled by the "thinking" spinner. */
+/** Verbs cycled by the "thinking" spinner.
+ *
+ * Professional operator copy: the spinner names what the agent is doing, so
+ * the verbs read like work in progress, not a movie.
+ */
 export const THINKING_VERBS: string[] = [
-  'decrypting',
-  'probing',
-  'injecting',
-  'enumerating',
-  'sniffing',
-  'triangulating',
-  'fuzzing',
-  'exfiltrating',
-  'obfuscating',
-  'handshaking',
-  'compiling',
-  'negotiating',
+  'analyzing',
+  'searching',
+  'planning',
+  'verifying',
+  'reading',
+  'reasoning',
+  'cross-checking',
+  'indexing',
   'tracing',
+  'comparing',
+  'drafting',
+  'revising',
+  'measuring',
   'resolving',
-  'mutating',
-  'hashing',
+  'summarizing',
+  'prioritizing',
 ];
 
 /**
@@ -250,13 +274,13 @@ export function agentColor(index: number, _palette?: Palette | null): string {
 
 /** Icons per tool, for panel headers. */
 export const TOOL_ICONS: Record<string, string> = {
-  bash: '▚',
-  read_file: '≡',
+  bash: '❯',
+  read_file: '▤',
   write_file: '✎',
-  edit_file: '±',
+  edit_file: '✂',
   glob: '✳',
   grep: '⌕',
-  list_dir: '▤',
-  search_web: '⌕',
-  web_fetch: '⇣',
+  list_dir: '☰',
+  search_web: '◎',
+  web_fetch: '⇅',
 };
