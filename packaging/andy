@@ -1,0 +1,294 @@
+#!/usr/bin/env bash
+# andy — launcher.
+#
+# Starts the LiteLLM -> Logfare proxy if it is not already up, then execs the
+# harness. Every argument is forwarded verbatim to the andy CLI, so
+# `andy --help`, `andy -C ~/proj` etc. all work unchanged.
+#
+# Configure through environment variables only:
+#
+#   ANDY_HOME                  harness dotdir            (default ~/.andy)
+#   LITELLM_ENV_FILE      profile to source         (default $ANDY_HOME/logfare/source)
+#   LITELLM_PORT          proxy port                (default 4001)
+#   LITELLM_SERVICE       proxy manager             (default $ANDY_HOME/logfare/start-litellm.sh)
+#   ANDY_NO_PROXY=1            never touch the proxy
+#   ANDY_REQUIRE_PROXY=1       hard-fail if the proxy is not healthy
+#
+# No key is ever printed or logged.
+
+set -euo pipefail
+
+# Find the checkout. This launcher lives in <root>/packaging/, so when
+# ANDY_ROOT is not already exported — run.sh and the installed shim both
+# export it — the checkout is the parent of this file's directory. readlink -f
+# resolves a symlink first, so the same rule holds however it was reached.
+_self_dir="$(cd -- "$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")" && pwd -P)"
+if [[ -z "${ANDY_ROOT:-}" ]]; then
+  if [[ "$(basename -- "$_self_dir")" == "packaging" ]]; then
+    ANDY_ROOT="$(dirname -- "$_self_dir")"
+  else
+    ANDY_ROOT="$_self_dir"
+  fi
+fi
+
+# Resolve the Node runtime. There is exactly one kind — node on PATH (the
+# package asks for >= 22) — and exactly one place its dependencies live:
+# $ANDY_ROOT/node_modules, built by `npm install` (install.sh does it; from
+# source the operator does). No activation layer, no bring-your-own venv:
+# a checkout without node_modules is not runnable and the check below says
+# so in the one command that fixes it.
+NODE="$(command -v node || true)"
+
+ANDY_HOME="${ANDY_HOME:-$HOME/.andy}"
+
+# Which upstream to use. An explicit environment variable always wins; failing
+# that, honour the source last chosen with /zim-logfare or /zim-tokenjuice, so
+# restarting lands back on whichever one was working. Absent either, Logfare.
+_env_override="${LITELLM_ENV_FILE:-}"
+_port_override="${LITELLM_PORT:-}"
+_svc_override="${LITELLM_SERVICE:-}"
+
+_current_source=""
+if [[ -r "$ANDY_HOME/current-source" ]]; then
+  _current_source="$(tr -d '[:space:]' < "$ANDY_HOME/current-source" 2>/dev/null || true)"
+fi
+
+# An endpoint already in the environment wins over everything below.
+#
+# `source ~/claude-source/haiku-5.5 && andy` is how the operator points a
+# session at a hosted provider, and it has to mean the same thing here as it
+# does for Claude Code. The launcher would otherwise source $LITELLM_ENV_FILE,
+# whose own ANTHROPIC_BASE_URL would clobber the inherited one — leaving a
+# session on the wrong provider with no indication, which is exactly what
+# the fail-closed check further down exists to prevent. A *local* inherited URL
+# is left on the normal path: that is the ordinary proxy case and still needs
+# the profile and the health check.
+_inherited_base_url="${ANTHROPIC_BASE_URL:-}"
+_skip_profile=0
+if [[ -n "$_inherited_base_url" \
+      && "$_inherited_base_url" != *"localhost:"* \
+      && "$_inherited_base_url" != *"127.0.0.1:"* ]]; then
+  _skip_profile=1
+  ANDY_NO_PROXY=1
+fi
+
+if [[ "$_skip_profile" != "1" ]]; then
+  # The hosted gateways — TokenHarbour, OpenRouter — are remote: there
+  # is no proxy to start, and no LiteLLM config to point at one. Andy's own
+  # profile (written by /<name>-api-setup) is sourced when it exists, which sets
+  # ANTHROPIC_BASE_URL to the hosted endpoint; the case below then skips the
+  # proxy on its own. When it does not exist the key lives in the environment or
+  # in ~/claude-source, and the harness resolves it from there — so nothing is
+  # sourced and nothing is required, but the fail-closed check must still be told
+  # there is no proxy to insist on.
+  #
+  # Every hosted gateway needs this branch, not just the first one written.
+  # Without it a remembered TokenHarbour or OpenRouter selection falls through
+  # to the Logfare profile below: the launcher then tries to start LiteLLM for a
+  # session
+  # that will never use it, and on a machine with no Logfare profile installed it
+  # dies fail-closed — "profile not found" — for a gateway that needs no profile
+  # at all. That is a session that cannot start, for a reason that is not true.
+  case "$_current_source" in
+    tokenharbour|openrouter)
+      if [[ -r "$ANDY_HOME/$_current_source/source" ]]; then
+        LITELLM_ENV_FILE="${_env_override:-$ANDY_HOME/$_current_source/source}"
+      fi
+      ANDY_NO_PROXY=1
+      ;;
+  esac
+fi
+
+if [[ "$_current_source" == "tokenjuice" ]]; then
+  # Prefer the installed route, which setup.sh populates; fall back to the
+  # standalone deepseek-claude layout for a machine that had one before
+  # andy was installed. Checking the installed copy first is what makes
+  # this work on a fresh machine — the old hardcoded $HOME paths only exist on
+  # the box where deepseek-claude happened to be installed.
+  _tj_profile=""; _tj_service=""
+  for _cand in "$ANDY_HOME/tokenjuice/source:$ANDY_HOME/tokenjuice/start-litellm.sh" \
+               "$HOME/claude-source/deepseek-claude:$HOME/start-litellm.sh"; do
+    _p="${_cand%%:*}"; _s="${_cand##*:}"
+    if [[ -r "$_p" && -x "$_s" ]]; then
+      _tj_profile="$_p"; _tj_service="$_s"; break
+    fi
+  done
+  # Only switch if the Token Juice side is actually installed; otherwise fall
+  # through to Logfare rather than dying on a missing profile.
+  if [[ -n "$_tj_profile" ]]; then
+    LITELLM_ENV_FILE="${_env_override:-$_tj_profile}"
+    LITELLM_PORT="${_port_override:-4000}"
+    LITELLM_SERVICE="${_svc_override:-$_tj_service}"
+    LITELLM_LOG="${LITELLM_LOG:-/tmp/litellm-tj.log}"
+  fi
+fi
+
+LITELLM_ENV_FILE="${LITELLM_ENV_FILE:-$ANDY_HOME/logfare/source}"
+LITELLM_PORT="${LITELLM_PORT:-4001}"
+LITELLM_LOG="${LITELLM_LOG:-/tmp/litellm-zim.log}"
+LITELLM_SERVICE="${LITELLM_SERVICE:-$ANDY_HOME/logfare/start-litellm.sh}"
+
+ANDY_NO_PROXY="${ANDY_NO_PROXY:-0}"
+ANDY_REQUIRE_PROXY="${ANDY_REQUIRE_PROXY:-0}"
+
+# Diagnostics go to stderr so piped/redirected runs stay parseable.
+die()  { printf '\033[31m[andy]\033[0m %s\n' "$*" >&2; exit 2; }
+warn() { printf '\033[33m[andy]\033[0m %s\n' "$*" >&2; }
+info() { printf '\033[36m[andy]\033[0m %s\n' "$*" >&2; }
+
+# Keep the checkout's own node_modules in step with package.json.
+#
+# install.sh runs `npm install` once. package.json can still move under it —
+# a launch-time update pulls a new one, or the operator edits it — and stale
+# node_modules then fails the dependency check below on a missing module.
+# So reinstall only when the manifest's content differs from what was last
+# installed, recorded in a stamp inside node_modules: an ordinary launch pays
+# nothing but a hash. Only an install this launcher can see the deps of is
+# touched — a missing node_modules is the fail-closed case below, not this.
+sync_deps() {
+  local manifest="$ANDY_ROOT/package.json" stamp="$ANDY_ROOT/node_modules/.deps.sha"
+  [[ -f "$manifest" && -d "$ANDY_ROOT/node_modules" ]] || return 0
+
+  local want=""
+  if command -v sha256sum >/dev/null 2>&1; then
+    want="$(sha256sum "$manifest" | cut -d' ' -f1)"
+  elif command -v shasum >/dev/null 2>&1; then
+    want="$(shasum -a 256 "$manifest" | cut -d' ' -f1)"
+  else
+    return 0   # no hasher: leave node_modules alone rather than reinstall every launch
+  fi
+  [[ -r "$stamp" && "$(cat "$stamp" 2>/dev/null)" == "$want" ]] && return 0
+
+  info "dependencies changed — refreshing node_modules (one-off)..."
+  # npm resolves the install against the CURRENT directory, not against the
+  # manifest it reads — so this must run from the checkout, or it installs (or
+  # prunes) whatever project the operator happened to be standing in. Subshell,
+  # so the launch's own cwd is left alone (the harness runs in the caller's
+  # project, not in its own checkout).
+  if ( cd "$ANDY_ROOT" && npm install --silent --no-fund --no-audit </dev/null ); then
+    printf '%s' "$want" > "$stamp"
+    info "node_modules up to date."
+  else
+    warn "could not refresh node_modules — run npm install in $ANDY_ROOT"
+  fi
+}
+
+# --- preconditions -----------------------------------------------------------
+
+[[ -n "$NODE" ]] || die "node not found on PATH — andy needs Node 22 or newer.
+       Install it (https://nodejs.org) or bring a node onto PATH and retry."
+
+# Bring the checkout's dependencies up to date first, so the presence check
+# below tests the tree as it will actually be after this launch, not as it was.
+sync_deps
+
+# The dependencies must be installed in THIS checkout. Checking here turns a
+# cascade of ERR_MODULE_NOT_FOUND at launch into the one command that fixes it.
+# The message names the runtime and the tree it resolved — the same facts the
+# install suite reads out of this failure.
+if [[ ! -d "$ANDY_ROOT/node_modules" ]]; then
+  die "dependencies not installed: $ANDY_ROOT/node_modules is missing (node: $NODE)
+       Fix:  npm install --prefix $ANDY_ROOT   (or re-run ./install.sh)"
+fi
+
+# Fail CLOSED. Without the profile, the harness would silently use whatever
+# ANTHROPIC_* the shell already exports — a session against the wrong provider
+# with no indication anything was off.
+if [[ "$ANDY_NO_PROXY" != "1" && ! -r "$LITELLM_ENV_FILE" ]]; then
+  die "profile not found: $LITELLM_ENV_FILE
+       Refusing to run: without it the harness would use whatever ANTHROPIC_*
+       variables your shell already exports.
+       Fix:  run ./setup.sh, or ANDY_NO_PROXY=1 andy ... for a direct endpoint."
+fi
+
+# --- load the profile --------------------------------------------------------
+
+_prev_base_url="${ANTHROPIC_BASE_URL:-}"
+if [[ "$_skip_profile" != "1" && -r "$LITELLM_ENV_FILE" ]]; then
+  set -a
+  # shellcheck disable=SC1090
+  . "$LITELLM_ENV_FILE"
+  set +a
+  if [[ -n "$_prev_base_url" && "$_prev_base_url" != "${ANTHROPIC_BASE_URL:-}" ]]; then
+    warn "overriding inherited ANTHROPIC_BASE_URL=$_prev_base_url -> ${ANTHROPIC_BASE_URL:-}"
+  fi
+fi
+
+# --- only manage a proxy when the profile points at the local one ------------
+
+case "${ANTHROPIC_BASE_URL:-}" in
+  *"localhost:${LITELLM_PORT}"*|*"127.0.0.1:${LITELLM_PORT}"*) ;;
+  *)
+    warn "ANTHROPIC_BASE_URL=${ANTHROPIC_BASE_URL:-<unset>} is not the local proxy"
+    warn "on :${LITELLM_PORT}; skipping the proxy start-up check."
+    ANDY_NO_PROXY=1
+    ;;
+esac
+
+port_answers() {
+  local code
+  code="$(curl -s -o /dev/null -w '%{http_code}' \
+      "http://127.0.0.1:${LITELLM_PORT}/health/liveliness" --max-time 2 || true)"
+  [[ "$code" == "200" ]]
+}
+
+ensure_proxy() {
+  [[ "$ANDY_NO_PROXY" == "1" ]] && return 0
+  port_answers && return 0
+
+  if [[ ! -x "$LITELLM_SERVICE" ]]; then
+    warn "proxy not answering on :${LITELLM_PORT}, and no service manager at"
+    warn "$LITELLM_SERVICE. Run ./setup.sh, or set ANDY_NO_PROXY=1."
+    return 1
+  fi
+
+  info "LiteLLM proxy not answering on :${LITELLM_PORT} — starting it..."
+  # Invoke as a SUBPROCESS, never `source`: start-litellm.sh's trailing `case`
+  # runs on load, and its functions call `exit`.
+  if "$LITELLM_SERVICE" start; then
+    info "proxy is up."
+    return 0
+  fi
+  warn "could not start the proxy — see $LITELLM_LOG"
+  return 1
+}
+
+# Serialize cold starts: do_start() has a check-then-act window, so two racing
+# invocations would both spawn litellm and leave an orphan on the port.
+#
+# Close the lock fd before exec. Without that, the harness (and any LiteLLM
+# it later starts) inherits the open file and holds the lock for the whole
+# session — /zim-tokenjuice then blocks on flock until start_proxy times out,
+# even though a manual start takes a few seconds.
+if command -v flock >/dev/null 2>&1 && [[ "$ANDY_NO_PROXY" != "1" ]]; then
+  exec 9>"${TMPDIR:-/tmp}/andy-proxy.lock"
+  flock 9
+  ensure_proxy || true
+  flock -u 9
+  exec 9>&-
+else
+  ensure_proxy || true
+fi
+
+if [[ "$ANDY_REQUIRE_PROXY" == "1" ]] && ! port_answers; then
+  die "proxy is not healthy on :${LITELLM_PORT} and ANDY_REQUIRE_PROXY=1."
+fi
+
+# --- hand off ----------------------------------------------------------------
+
+# Exported so the harness can find this launcher again. After a launch-time
+# update replaces the code, cli.ts re-execs *through this script* rather than
+# straight to node, so the dependency sync above runs against the package.json
+# the update just pulled. Without the export it would have to guess the path.
+export ANDY_ROOT
+
+# The built bundle when it exists, else TypeScript straight off the tree via
+# tsx from this checkout's own node_modules. Either way there is exactly one
+# exec — no npx resolution layer, no subshell — so exit status, signal
+# delivery and TTY ownership all belong to the harness. NOTE: exec discards
+# EXIT traps. The caller's cwd is untouched: the harness runs against the
+# operator's project, not against its own checkout.
+if [[ -f "$ANDY_ROOT/dist/cli.js" ]]; then
+  exec "$NODE" "$ANDY_ROOT/dist/cli.js" "$@"
+fi
+exec "$NODE" "$ANDY_ROOT/node_modules/.bin/tsx" "$ANDY_ROOT/src/cli.ts" "$@"
