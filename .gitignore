@@ -1,0 +1,22 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Packaging / build artifacts
+*.egg-info/
+build/
+dist/
+
+# Virtualenvs — the user brings their own
+.venv/
+venv/
+
+# Node (TypeScript migration target) — dist/ already covered above
+node_modules/
+
+# Agent-tooling session state (not part of the project)
+.claude-flow/
+.swarm/
+agentdb.rvf
+agentdb.rvf.lock
+.claude/
