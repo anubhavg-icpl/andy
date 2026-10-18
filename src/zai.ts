@@ -488,5 +488,9 @@ export function priceFor(
 export function looksLikeKey(value: string): boolean {
   const v = value.trim();
   if (v.length < 20 || /\s/.test(v)) return false;
+  // These prefixes unambiguously name another provider. Catching them here
+  // prevents the most likely paste error: an Anthropic or OpenRouter key
+  // reaching Z.ai's endpoint and failing only at the first model request.
+  if (/^(sk-ant-|sk-or-|lfu_)/i.test(v)) return false;
   return /^[A-Za-z0-9._:\-]+$/.test(v);
 }

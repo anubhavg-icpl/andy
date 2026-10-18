@@ -134,22 +134,30 @@ curl -fsSL <install.sh-url> | ANDY_INSTALL_DIR=~/andy bash
 ```
 
 `install.sh` honours `ANDY_REPO`, `ANDY_INSTALL_DIR`, `ANDY_BIN_DIR`,
-`ANDY_SKIP_DEPS` and `ANDY_SKIP_SETUP`.
+`ANDY_SKIP_DEPS`, `ANDY_SETUP=logfare|zai` and `ANDY_SKIP_SETUP`.
 
 ### Z.ai-only install — no Python
 
 Python is needed only by the optional local Logfare proxy. A direct hosted
-upstream such as Z.ai needs none of it. Install the launcher without route
-setup, then configure the Coding Plan inside Andy:
+upstream such as Z.ai needs none of it. Install the launcher and configure the
+Coding Plan with a hidden terminal prompt:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/anubhavg-icpl/andy/main/install.sh \
-  | ANDY_SKIP_SETUP=1 bash
+  | ANDY_SETUP=zai bash
 hash -r                          # teach the current zsh about the new command
 andy
 ```
 
-Inside Andy:
+The installer writes `~/.andy/zai/source` with mode `0600`, selects
+`glm-5.3`, and saves Z.ai as the persistent upstream. An existing install can
+do the same with:
+
+```bash
+~/.local/share/andy/setup.sh zai
+```
+
+You can also configure the key inside Andy:
 
 ```console
 /zai-api-setup <your-zai-coding-plan-key>

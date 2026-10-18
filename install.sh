@@ -26,6 +26,7 @@
 #                          (default ~/.local/bin)
 #   ANDY_SKIP_DEPS=1       lay the files down but do not install dependencies
 #   ANDY_SKIP_SETUP=1      do not run setup.sh at the end
+#   ANDY_SETUP=zai         prompt for a Z.ai GLM Coding Plan key; no Python
 #
 # This is meant to be run from a pipe (`curl … | bash`), where standard input
 # is the script itself — so nothing here may read stdin. External commands get
@@ -200,6 +201,17 @@ esac
 
 if [[ "${ANDY_SKIP_SETUP:-0}" == "1" ]]; then
   warn "ANDY_SKIP_SETUP=1 — not configuring the route"
+elif [[ "${ANDY_SETUP:-logfare}" == "zai" ]]; then
+  if [[ -r /dev/tty ]]; then
+    step "Configuring the Z.ai GLM Coding Plan"
+    "$INSTALL_DIR/setup.sh" zai </dev/tty \
+      || warn "Z.ai setup did not finish — run $INSTALL_DIR/setup.sh zai"
+  else
+    warn "no terminal available for the Z.ai key prompt"
+    note "run: $INSTALL_DIR/setup.sh zai"
+  fi
+elif [[ "${ANDY_SETUP:-logfare}" != "logfare" ]]; then
+  die "ANDY_SETUP must be 'logfare' or 'zai' (or use ANDY_SKIP_SETUP=1)"
 elif [[ -r "$PROFILE" ]]; then
   step "Route already configured"
   ok "$PROFILE exists"

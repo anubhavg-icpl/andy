@@ -154,6 +154,16 @@ describe('zai — credentials and switching', () => {
     expect(zai.appliesToDefaultEndpoint('https://api.z.ai/api/anthropic')).toBe(false);
   });
 
+  it('recognises the Coding Plan key shape without accepting other providers', () => {
+    const shaped = `${'a'.repeat(32)}.bcdEFG456789abcd`;
+    expect(zai.looksLikeKey(shaped)).toBe(true);
+    expect(zai.looksLikeKey(`sk-ant-${'a'.repeat(40)}`)).toBe(false);
+    expect(zai.looksLikeKey(`sk-or-v1-${'a'.repeat(40)}`)).toBe(false);
+    expect(zai.looksLikeKey(`lfu_${'a'.repeat(40)}`)).toBe(false);
+    expect(zai.looksLikeKey('short')).toBe(false);
+    expect(zai.looksLikeKey('two tokens that are not a key')).toBe(false);
+  });
+
   it('reuses an existing Claude-style profile for the same endpoint', () => {
     fs.rmSync(zai.PROFILE, { force: true });
     cleanEnv();

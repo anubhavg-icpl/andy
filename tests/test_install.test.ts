@@ -169,6 +169,22 @@ describe('install — optional Python proxy setup', () => {
       expect(line.includes('--no-user'), `${line.trim()} overrides global.user=true`).toBe(true);
     }
   });
+
+  it('offers a hidden-key Z.ai route that never touches Python', () => {
+    const setup = fs.readFileSync(path.join(ROOT, 'setup.sh'), 'utf-8');
+    const install = fs.readFileSync(path.join(ROOT, 'install.sh'), 'utf-8');
+
+    expect(setup).toContain('if [[ "$ROUTE" == "zai" ]]');
+    expect(setup).toContain('read -rs ZAI_KEY');
+    expect(setup).toContain('https://api.z.ai/api/anthropic');
+    expect(setup).toContain('printf \'zai\\n\' > "$ANDY_HOME/current-source"');
+    expect(setup.indexOf('if [[ "$ROUTE" == "zai" ]]')).toBeLessThan(
+      setup.indexOf('Checking the LiteLLM proxy'),
+    );
+    expect(setup).toContain('[[ "$ZAI_KEY" == sk-ant-*');
+    expect(install).toContain('"$INSTALL_DIR/setup.sh" zai </dev/tty');
+    expect(install).toContain('ANDY_SETUP=zai');
+  });
 });
 
 // ---------------------------------------------------------------------------
