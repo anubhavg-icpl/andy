@@ -1,0 +1,92 @@
+name: release
+
+# Fires only on a pushed `v*` tag — the operator's own action, same as any
+# `git push origin <tag>` (see ~/.claude/rules/release-review.md: pushing a
+# tag is fine without separate confirmation; the publish step past it is
+# not). The `publish` job runs under the `release` GitHub Environment, which
+# the repo owner must configure with at least one required reviewer
+# (Settings -> Environments -> release -> Required reviewers) — until that
+# is set up, this job pauses indefinitely rather than running unattended.
+# That gate is what keeps a tag push from silently becoming a publish: no
+# CI job and no agent in this repo can click "approve" on your behalf.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch: {} # manual "Run workflow" button, same gate applies
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: andy-dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: release # <- the manual-approval gate; see header comment
+    permissions:
+      contents: write # gh release create
+      packages: write # GitHub Packages (npm.pkg.github.com)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/download-artifact@v4
+        with:
+          name: andy-dist
+          path: dist/
+
+      # GitHub Packages — no extra secret needed, just the `packages: write`
+      # permission above. Scoped under the repo owner so `npm install
+      # @anubhavg-icpl/andy` (not plain `andy`) resolves from GH's registry.
+      # Skipped silently if the package name isn't scoped (`@owner/pkg`) —
+      # GitHub Packages requires the scope to match the repo owner.
+      - name: publish to GitHub Packages
+        run: |
+          if node -e "process.exit(require('./package.json').name.startsWith('@') ? 0 : 1)"; then
+            npm publish --registry https://npm.pkg.github.com
+          else
+            echo "package.json name is unscoped (\"$(node -p "require('./package.json').name")\") — GitHub Packages requires a @owner/name scope. Skipping; add one to enable this step."
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Public npm registry — only runs if NPM_TOKEN is set in this repo's
+      # secrets (Settings -> Secrets and variables -> Actions). Absent
+      # token means "not opted in yet"; the step is skipped, not failed.
+      - name: publish to npm
+        if: ${{ secrets.NPM_TOKEN != '' }}
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # The GitHub Release itself — release-review.md's subject exactly.
+      # Reaching this step already required the `release` environment's
+      # human approval above, so this is not an unattended publish; it is
+      # the mechanical last step of one a person already signed off on.
+      - name: create GitHub release
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --repo "${{ github.repository }}" \
+            --title "${{ github.ref_name }}" \
+            --generate-notes \
+            dist/cli.js
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
