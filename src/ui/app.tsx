@@ -1617,7 +1617,11 @@ export function AndyApp(props: AndyAppProps) {
     if (!m) return;
     say(
       <Box justifyContent="center">
-        {m.banner.splashMark(pal(), cfg().model, cfg().baseUrl)}
+        {/* splashMark returns a plain (ANSI-styled) string, not JSX — Ink
+            requires every text node to be inside a <Text>; passing a raw
+            string straight to <Box> throws "must be rendered inside <Text>
+            component" the instant this renders. */}
+        <Text>{m.banner.splashMark(pal(), cfg().model, cfg().baseUrl)}</Text>
       </Box>,
     );
   };
