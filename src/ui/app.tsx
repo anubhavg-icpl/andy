@@ -89,6 +89,7 @@ import {
   cmdAndySource,
   cmdAndyTokenharbour,
 } from './screens/model-commands.js';
+import { cmdMcpAdd, cmdMcpList, cmdMcpRemove } from './screens/mcp-commands.js';
 import {
   cmdAd,
   cmdBugHunt,
@@ -543,6 +544,31 @@ export interface CatalogModel {
 
 /** The shared provider-catalog contract (PORT-MAP §2.5); members only the
  * module actually serves are non-optional. */
+/** The slice of mcp.ts the TUI drives — deliberately not forced into
+ * ProviderModule's shape (fetchModels/CACHE_TTL etc. don't fit a
+ * tool-server registry), see mcp.ts's own file contract for the module. */
+export interface McpModule {
+  loadServers(): Array<{ name: string; command: string; args?: string[]; env?: Record<string, string> }>;
+  addServer(cfg: {
+    name: string;
+    command: string;
+    args?: string[];
+    env?: Record<string, string>;
+  }): Promise<unknown>;
+  removeServer(name: string): Promise<boolean>;
+  looksLikeServerName(name: string): boolean;
+  connectAll(): Promise<void>;
+  status(): Array<{
+    name: string;
+    command: string;
+    args: string[];
+    connected: boolean;
+    toolCount: number;
+    error?: string;
+  }>;
+  hasEverConnected(): boolean;
+}
+
 export interface ProviderModule {
   loadCredentials(): [string, string, string] | null;
   fetchModels(token?: string): Promise<[CatalogModel[] | null, string]>;
@@ -888,6 +914,7 @@ export interface Mods {
   zai: ProviderModule;
   anthropic: ProviderModule;
   antseed: ProviderModule;
+  mcp: McpModule;
   ldxhub: LdxhubModule;
   agent: { Agent: AgentCtor };
   team: TeamModule;
@@ -931,6 +958,7 @@ async function loadMods(): Promise<Mods> {
     zai,
     anthropicSetup,
     antseed,
+    mcp,
     ldxhub,
     agent,
     team,
@@ -968,6 +996,7 @@ async function loadMods(): Promise<Mods> {
     sibling<ProviderModule>(import('../zai.js')),
     sibling<ProviderModule>(import('../anthropic-setup.js')),
     sibling<ProviderModule>(import('../antseed.js')),
+    sibling<McpModule>(import('../mcp.js')),
     sibling<LdxhubModule>(import('../ldxhub.js')),
     sibling<{ Agent: AgentCtor }>(import('../agent.js')),
     sibling<TeamModule>(import('../team.js')),
@@ -1006,6 +1035,7 @@ async function loadMods(): Promise<Mods> {
     zai,
     anthropic: anthropicSetup,
     antseed,
+    mcp,
     ldxhub,
     agent,
     team,
@@ -2557,6 +2587,7 @@ export function AndyApp(props: AndyAppProps) {
     'aihubmix-api-setup', 'aihubmix-models', 'andy-aihubmix',
     'zai-api-setup', 'zai-models', 'andy-zai',
     'anthropic-api-setup', 'anthropic-models', 'andy-anthropic',
+    'mcp-add', 'mcp-remove', 'mcp-list',
     'andy-antseed', 'antseed-models', 'logfare-models',
     // LDXHub: the key and the catalogs are local reads; the catalogs public.
     'ldxhub-api-setup', 'ldxhub-models',
@@ -2686,6 +2717,9 @@ export function AndyApp(props: AndyAppProps) {
       'andy-anthropic': () => cmdAndyGateway(ctx, 'anthropic'),
       'anthropic-api-setup': (a) => cmdGatewayKey(ctx, 'anthropic', a),
       'anthropic-models': () => cmdModels(ctx, ['anthropic']),
+      'mcp-add': (a) => cmdMcpAdd(ctx, a),
+      'mcp-remove': (a) => cmdMcpRemove(ctx, a),
+      'mcp-list': () => cmdMcpList(ctx),
       'antseed-models': () => cmdModels(ctx, ['antseed']),
       models: (a) => cmdModels(ctx, a),
       'logfare-models': () => cmdLogfareModels(ctx),
@@ -2808,6 +2842,9 @@ export function AndyApp(props: AndyAppProps) {
       ['/zai-models', 'the GLM Coding Plan model registry', 'zai-models'],
       ['/anthropic-api-setup', 'store your Anthropic API key', 'anthropic-api-setup'],
       ['/anthropic-models', 'the Claude model roster (static, no key needed)', 'anthropic-models'],
+      ['/mcp-add', 'add an MCP server — /mcp-add <name> <command> [args]', 'mcp-add'],
+      ['/mcp-remove', 'remove an MCP server', 'mcp-remove'],
+      ['/mcp-list', 'list configured MCP servers and their tools', 'mcp-list'],
       ['/models', 'free models of an upstream — /models [source]', 'models'],
       ['/logfare-models', 'fetch the live catalog; show what is up', 'logfare-models'],
       ['/ldxhub-api-setup', 'store your LDXHub API key', 'ldxhub-api-setup'],

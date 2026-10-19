@@ -35,6 +35,7 @@ import Anthropic, {
 import type { Message, MessageParam, ToolUnion } from '@anthropic-ai/sdk/resources/messages';
 import { type Config, DEFAULT_MODE, MODES, findAgentsFile, priceFor } from './config.js';
 import { hasKey } from './ldxhub.js';
+import { cachedToolSchemas as mcpCachedToolSchemas, connectAll as mcpConnectAll } from './mcp.js';
 import { Scope } from './scope.js';
 import {
   HUNT_ONLY_TOOLS,
@@ -375,7 +376,11 @@ export class Agent {
     // ldxhub lazily; hasKey is sync and ldxhub does not import agent, so a
     // static import here keeps this method synchronous without a cycle.)
     if (!hasKey()) for (const t of LDXHUB_TOOLS) deny.add(t);
-    const schemas = [...TOOL_SCHEMAS, ...PEER_SCHEMAS];
+    // Synchronous and reads only mcp.ts's connection cache — see
+    // runTurn()'s mcpConnectAll() call for where that cache gets populated.
+    // A session with no configured servers (or before the first connect)
+    // contributes nothing here, same as every other optional source.
+    const schemas = [...TOOL_SCHEMAS, ...PEER_SCHEMAS, ...mcpCachedToolSchemas()];
     return schemas.filter((t) => !deny.has(t.name));
   }
 
@@ -590,6 +595,11 @@ export class Agent {
     // once per turn: the live catalog's figure for this model when it has
     // one, else the configured fallback.
     const window = await this.contextWindow();
+    // Idempotent and near-free once every configured server is up — see
+    // mcp.ts's connectAll() for why this is safe to call every turn rather
+    // than once at construction (a server that failed last turn gets
+    // retried here instead of needing the operator to notice and reconnect).
+    await mcpConnectAll();
 
     // Python's while-else: ONLY the loop condition running out (never a
     // break) is the runaway backstop below. Modelled as an explicit flag so a

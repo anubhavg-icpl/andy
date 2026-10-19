@@ -467,7 +467,10 @@ const _SKIP_DIRS = new Set([
 export class ToolError extends Error {}
 
 export function needsPermission(name: string): boolean {
-  return GATED_TOOLS.has(name);
+  // Every MCP tool is gated, same bucket as bash/write_file/edit_file — see
+  // mcp.ts's file contract for why: the server is operator-configured, but
+  // Andy has no way to verify what it actually does.
+  return GATED_TOOLS.has(name) || name.startsWith('mcp__');
 }
 
 // === SECTION === small coercion / formatting helpers ===
@@ -787,7 +790,16 @@ export async function execute(
   // Run a tool. Never raises for ordinary failures — returns ToolResult.
   try {
     const fn = DISPATCH[name];
-    if (fn === undefined) return { output: `unknown tool: ${name}`, isError: true };
+    if (fn === undefined) {
+      // Not a built-in — an mcp__<server>__<tool> name routes to its
+      // server instead of falling through to "unknown tool". See mcp.ts's
+      // file contract for the whole bridge.
+      if (name.startsWith('mcp__')) {
+        const mcp = await import('./mcp.js');
+        return await mcp.callTool(name, args);
+      }
+      return { output: `unknown tool: ${name}`, isError: true };
+    }
     return await fn(args, cfg);
   } catch (e) {
     if (e instanceof SandboxError) return { output: `sandbox: ${e.message}`, isError: true };
