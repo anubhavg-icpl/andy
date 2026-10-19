@@ -552,6 +552,29 @@ function fmtK(n: number): string {
   return String(n);
 }
 
+/**
+ * The bar's one animated glyph — a tiny "pet" standing in for the static
+ * ●/⟳ this used to be. Deliberately its own tiny braille cycle rather than
+ * importing web.tsx's SPINNER: web.tsx is ~1800 lines of campaign-only
+ * canvas rendering (hunt.js, tools.js in its own module graph) that every
+ * session would otherwise pay to load just for an 11-character string, when
+ * StatusBar itself is on every session's critical path.
+ */
+const PET_BUSY_FRAMES = '⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏';
+/** Ticks (StatusBar's own 1/sec driver) the error reaction holds for before
+ * falling back to the busy/idle glyph — long enough to register as "the pet
+ * reacted to that", short enough that it never looks stuck mid-react. */
+const PET_ERROR_HOLD_TICKS = 4;
+
+export function petGlyph(tick: number, busy: boolean, errorFlashAt: number | undefined): string {
+  if (errorFlashAt !== undefined && tick - errorFlashAt < PET_ERROR_HOLD_TICKS) return '✕';
+  if (busy) return PET_BUSY_FRAMES[tick % PET_BUSY_FRAMES.length] ?? '⠋';
+  // Idle: a slow one-per-second breathe between a full and a hollow dot,
+  // rather than the single static ● this replaced — "idle" should still
+  // read as alive, just unhurried.
+  return tick % 2 === 0 ? '●' : '○';
+}
+
 export interface StatusBarProps {
   palette: Palette;
   model?: string;
@@ -570,6 +593,8 @@ export interface StatusBarProps {
    * to mount time (the Python bar captured `time.monotonic()` in its ctor).
    * Optional extra beyond the app contract, kept for tests. */
   startedAt?: number;
+  /** The `tick` an error last landed on — see petGlyph() above. */
+  errorFlashAt?: number;
 }
 
 /** Bottom bar: tokens, cost, turns, iteration, elapsed, activity. */
@@ -590,6 +615,9 @@ export function StatusBar(props: StatusBarProps): ReactNode {
   const iterations = props.iterations ?? 0;
   const activity = props.activity ?? 'idle';
   const busy = props.busy ?? false;
+  const tick = props.tick ?? 0;
+  const pet = petGlyph(tick, busy, props.errorFlashAt);
+  const petErrored = props.errorFlashAt !== undefined && tick - props.errorFlashAt < PET_ERROR_HOLD_TICKS;
 
   // The same measured-fit discipline as the header: the row is one line and
   // the terminal clips overflow, so without this the rightmost field — the
@@ -611,9 +639,9 @@ export function StatusBar(props: StatusBarProps): ReactNode {
     { text: `turn ${turns}`, color: p.primary },
     { text: ' · ', color: p.dim },
     {
-      text: busy ? `⟳ ${activity}` : `● ${activity}`,
-      color: busy ? p.accent : p.dim,
-      bold: busy,
+      text: `${pet} ${activity}`,
+      color: petErrored ? p.red : busy ? p.accent : p.dim,
+      bold: busy || petErrored,
     },
   ];
   const extras: Seg[] = [

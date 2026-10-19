@@ -326,6 +326,8 @@ export interface WidgetsModule {
     busy: boolean;
     /** Drives the elapsed clock — bumped once a second by the app. */
     tick: number;
+    /** See BarState's own doc — the tick an error last landed on. */
+    errorFlashAt?: number;
   }>;
   WelcomeHint: FC<{ palette: Palette }>;
   ChatPane: HandleWidget<{ palette: Palette; rain?: boolean }, ChatPaneHandle>;
@@ -1352,6 +1354,12 @@ interface BarState {
   activity: string;
   busy: boolean;
   tick: number;
+  /** The `tick` value at which the last turn errored, or undefined if
+   * nothing has errored yet this session. Self-expiring rather than a
+   * boolean the error handler would need a matching "clear" call for —
+   * StatusBar reads `tick - errorFlashAt` and only reacts within a short
+   * window, so nothing has to remember to turn it back off. */
+  errorFlashAt?: number;
 }
 
 interface HeaderState {
@@ -2253,6 +2261,9 @@ export function AndyApp(props: AndyAppProps) {
       flushStream();
       chat()?.cardFinish();
       say(R()?.errorBlock(ev.message, pal()));
+      // Pet reacts briefly — see BarState.errorFlashAt's own doc for why
+      // this is the only call site that needs to touch it.
+      updateBar({ errorFlashAt: barRef.current.tick });
     } else if (etype === 'continuing') {
       // The soft round cap was passed because the turn is still getting work
       // done. Said out loud so a long turn is legible rather than looking
@@ -3132,6 +3143,7 @@ export function AndyApp(props: AndyAppProps) {
           activity={bar.activity}
           busy={bar.busy}
           tick={bar.tick}
+          errorFlashAt={bar.errorFlashAt}
         />
         <Box
           borderStyle="round"
