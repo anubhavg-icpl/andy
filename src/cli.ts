@@ -37,7 +37,7 @@ import { THEME_NAMES, currentTheme } from './theme.js';
 import * as updateMod from './update.js';
 
 /** andy/__init__.py's `__version__`, folded here per PORT-MAP row 42. */
-export const VERSION = '1.0.0';
+export const VERSION = '1.0.2';
 
 const CLI_PATH = fileURLToPath(import.meta.url);
 
@@ -758,7 +758,29 @@ export async function main(argv?: string[]): Promise<number> {
 }
 
 // `python -m andy` → `node dist/cli.js`: run main when executed directly.
-if (process.argv[1] && path.resolve(process.argv[1]) === CLI_PATH) {
+//
+// CLI_PATH (fileURLToPath(import.meta.url)) is always the REAL file path —
+// Node resolves module URLs through symlinks when loading ESM. argv[1] is
+// whatever the shell actually typed, which is the realpath only when andy
+// was invoked by its literal file path. Every other normal invocation goes
+// through a symlink: `npm link`, an npx bin shim, a hand-made
+// ~/.local/bin/andy -> dist/cli.js. Comparing the raw (non-realpath) argv[1]
+// against CLI_PATH made every one of those silently skip main() — the
+// process loaded, matched nothing, and exited 0 with no output and no
+// error, which is the worst possible failure mode for a CLI entrypoint.
+// realpathSync resolves argv[1] through its symlink chain so the comparison
+// is apples to apples; the try/catch covers the pathological case of
+// argv[1] naming a file that no longer exists by the time this runs.
+function invokedAsCli(): boolean {
+  if (!process.argv[1]) return false;
+  try {
+    return fs.realpathSync(process.argv[1]) === CLI_PATH;
+  } catch {
+    return false;
+  }
+}
+
+if (invokedAsCli()) {
   void main().then(
     (code) => process.exit(code),
     (e) => {

@@ -166,24 +166,51 @@ You can also configure the key inside Andy:
 
 ### Run once with npx
 
-The full one-command form is:
+Andy is published on the public npm registry as `@anubhavg-icpl/andy`
+(the bare `andy` name was already taken, so it's scoped — the installed
+command is still plain `andy`). The one-command form is:
 
 ```bash
-npx --yes --package=github:anubhavg-icpl/andy andy
+npx --yes @anubhavg-icpl/andy
 ```
 
-Node.js 22 or newer is required. npm fetches the repository, runs the package's
-`prepare` build (which emits `dist/cli.js` from the committed TypeScript), and
-launches the `andy` binary from its cache. That is the right command for a
-one-off run or a quick evaluation; it does **not** put an `andy` launcher on
-your `PATH`, and it does not run the installer's proxy setup. In other words,
-running `npx` once does not make a later bare `andy` command work; either use
-the `npx` form each time or run the installer above.
+Node.js 22 or newer is required. This is the right command for a one-off run
+or a quick evaluation; it does **not** put an `andy` launcher on your `PATH`,
+and it does not run the installer's proxy setup. Running `npx` once does not
+make a later bare `andy` command work — either use the `npx` form each time
+or run the installer above for a persistent launcher.
 
-For a hosted source such as Z.ai, the ephemeral path is still complete:
+> A `github:` package specifier (`npx --package=github:owner/repo ...`) needs
+> npm's git-fetch protocol, which some environments disable
+> (`EALLOWGIT`/"Fetching packages of type git have been disabled"). The
+> published-registry form above sidesteps that entirely — prefer it.
+
+No credential set yet? Andy asks interactively on first launch, as long as
+stdin/stdout are a real terminal (a piped or headless invocation still fails
+fast with the old plain-text error instead of hanging on a prompt nobody can
+answer):
 
 ```console
-npx --yes --package=github:anubhavg-icpl/andy andy
+$ npx --yes @anubhavg-icpl/andy
+
+andy: no API key configured yet.
+
+  1) Anthropic          — api.anthropic.com, pay-per-token
+  2) Z.ai GLM Coding Plan — api.z.ai, subscription
+  3) skip for now        — set ANTHROPIC_API_KEY yourself, or run ./setup.sh
+
+Pick a provider [1]: 2
+Z.ai Coding Plan API key: ••••••••••••••••••••••••••••
+  saved to ~/.andy/zai/source
+```
+
+The same two sources are also configurable once Andy is already running, with
+or without npx:
+
+```console
+/anthropic-api-setup <your-anthropic-key>
+/andy-anthropic
+
 /zai-api-setup <your-zai-coding-plan-key>
 /andy-zai
 ```

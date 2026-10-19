@@ -1,13 +1,20 @@
 {
-  "name": "andy",
-  "version": "1.0.0",
+  "name": "@anubhavg-icpl/andy",
+  "version": "1.0.2",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anubhavg-icpl/andy.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "dist",
     "README.md"
   ],
   "bin": {
-    "andy": "./dist/cli.js"
+    "andy": "dist/cli.js"
   },
   "engines": {
     "node": ">=22"
