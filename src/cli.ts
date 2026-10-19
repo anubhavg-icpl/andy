@@ -402,6 +402,69 @@ function reexec(argv: string[]): Promise<never> {
   });
 }
 
+// === SECTION === credential onboarding ===
+
+/**
+ * First-run, interactive-terminal-only credential setup. Runs exactly once,
+ * right before the launch gate that would otherwise just print an error and
+ * exit — so a brand-new install reaches a working session on the first
+ * `andy` invocation instead of needing `./setup.sh` or a hand-set env var
+ * first. Writes through the same provider modules `/anthropic-api-setup`
+ * and `/zai-api-setup` use inside the running TUI, so a key saved here
+ * behaves identically to one pasted after launch — mode-600 profile under
+ * ~/.andy, never echoed, never logged.
+ *
+ * Returns the source key to remember as current ('anthropic' | 'zai'), or
+ * null if the operator skipped (Ctrl+C, blank input, or chose "later") —
+ * null leaves `cfg` untouched and the caller's existing error path fires.
+ */
+async function runCredentialOnboarding(cfg: Config): Promise<string | null> {
+  const { createInterface } = await import('node:readline/promises');
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    process.stdout.write(
+      '\nandy: no API key configured yet.\n\n' +
+        '  1) Anthropic          — api.anthropic.com, pay-per-token\n' +
+        '  2) Z.ai GLM Coding Plan — api.z.ai, subscription\n' +
+        '  3) skip for now        — set ANTHROPIC_API_KEY yourself, or run ./setup.sh\n\n',
+    );
+    const choice = (await rl.question('Pick a provider [1]: ')).trim() || '1';
+    if (choice === '3' || choice.toLowerCase() === 'skip') return null;
+
+    if (choice === '2') {
+      const key = (await rl.question('Z.ai Coding Plan API key: ')).trim();
+      if (!key) return null;
+      const zai = await import('./zai.js');
+      if (!zai.looksLikeKey(key)) {
+        process.stderr.write(
+          'andy: that does not look like a Z.ai key — paste just the key, not the whole `export` line.\n',
+        );
+        return null;
+      }
+      const savedPath = zai.saveKey(key);
+      zai.applyTo(cfg);
+      process.stdout.write(`  saved to ${savedPath}\n\n`);
+      return cfg.apiKeyPresent ? 'zai' : null;
+    }
+
+    const key = (await rl.question('Anthropic API key: ')).trim();
+    if (!key) return null;
+    const anthropicSetup = await import('./anthropic-setup.js');
+    if (!anthropicSetup.looksLikeKey(key)) {
+      process.stderr.write(
+        'andy: that does not look like an API key — paste just the key, not the whole `export` line.\n',
+      );
+      return null;
+    }
+    const savedPath = anthropicSetup.saveKey(key);
+    anthropicSetup.applyTo(cfg);
+    process.stdout.write(`  saved to ${savedPath}\n\n`);
+    return cfg.apiKeyPresent ? 'anthropic' : null;
+  } finally {
+    rl.close();
+  }
+}
+
 // === SECTION === main ===
 
 export async function main(argv?: string[]): Promise<number> {
@@ -550,6 +613,7 @@ export async function main(argv?: string[]): Promise<number> {
       antseed: () => import('./antseed.js'),
       aihubmix: () => import('./aihubmix.js'),
       zai: () => import('./zai.js'),
+      anthropic: () => import('./anthropic-setup.js'),
     };
     const loader = gateways[remembered];
     if (loader) {
@@ -577,12 +641,24 @@ export async function main(argv?: string[]): Promise<number> {
   }
 
   if (!cfg.apiKeyPresent) {
+    // Interactive first-run: only when there is a human on the other end of
+    // stdin/stdout to ask. A piped/headless invocation (CI, a script, a
+    // non-interactive agent) falls straight through to the plain error below
+    // rather than hanging on a prompt nobody can answer.
+    if (process.stdin.isTTY && process.stdout.isTTY) {
+      const onboarded = await runCredentialOnboarding(cfg);
+      if (onboarded) sourcesMod.setCurrent(onboarded);
+    }
+  }
+
+  if (!cfg.apiKeyPresent) {
     process.stderr.write(
       'andy: no credentials found.\n' +
         '  Set ANTHROPIC_AUTH_TOKEN (preferred) or ANTHROPIC_API_KEY.\n' +
         "  For the local Logfare route, source Andy's own profile:\n" +
         '      set -a; . ~/.andy/logfare/source; set +a\n' +
-        '  Or just run `./setup.sh` once, then launch with `andy`.\n',
+        '  Or just run `./setup.sh` once, then launch with `andy`.\n' +
+        '  Or paste a key when andy next asks — it only asks in an interactive terminal.\n',
     );
     return 2;
   }

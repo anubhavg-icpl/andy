@@ -865,6 +865,7 @@ export interface Mods {
   unorouter: ProviderModule;
   aihubmix: ProviderModule;
   zai: ProviderModule;
+  anthropic: ProviderModule;
   antseed: ProviderModule;
   ldxhub: LdxhubModule;
   agent: { Agent: AgentCtor };
@@ -907,6 +908,7 @@ async function loadMods(): Promise<Mods> {
     unorouter,
     aihubmix,
     zai,
+    anthropicSetup,
     antseed,
     ldxhub,
     agent,
@@ -943,6 +945,7 @@ async function loadMods(): Promise<Mods> {
     sibling<ProviderModule>('../unorouter.js'),
     sibling<ProviderModule>('../aihubmix.js'),
     sibling<ProviderModule>('../zai.js'),
+    sibling<ProviderModule>('../anthropic-setup.js'),
     sibling<ProviderModule>('../antseed.js'),
     sibling<LdxhubModule>('../ldxhub.js'),
     sibling<{ Agent: AgentCtor }>('../agent.js'),
@@ -980,6 +983,7 @@ async function loadMods(): Promise<Mods> {
     unorouter,
     aihubmix,
     zai,
+    anthropic: anthropicSetup,
     antseed,
     ldxhub,
     agent,
@@ -2506,6 +2510,7 @@ export function AndyApp(props: AndyAppProps) {
     'unorouter-api-setup', 'unorouter-models', 'andy-unorouter',
     'aihubmix-api-setup', 'aihubmix-models', 'andy-aihubmix',
     'zai-api-setup', 'zai-models', 'andy-zai',
+    'anthropic-api-setup', 'anthropic-models', 'andy-anthropic',
     'andy-antseed', 'antseed-models', 'logfare-models',
     // LDXHub: the key and the catalogs are local reads; the catalogs public.
     'ldxhub-api-setup', 'ldxhub-models',
@@ -2632,6 +2637,9 @@ export function AndyApp(props: AndyAppProps) {
       'andy-zai': () => cmdAndyGateway(ctx, 'zai'),
       'zai-api-setup': (a) => cmdGatewayKey(ctx, 'zai', a),
       'zai-models': () => cmdModels(ctx, ['zai']),
+      'andy-anthropic': () => cmdAndyGateway(ctx, 'anthropic'),
+      'anthropic-api-setup': (a) => cmdGatewayKey(ctx, 'anthropic', a),
+      'anthropic-models': () => cmdModels(ctx, ['anthropic']),
       'antseed-models': () => cmdModels(ctx, ['antseed']),
       models: (a) => cmdModels(ctx, a),
       'logfare-models': () => cmdLogfareModels(ctx),
@@ -2740,6 +2748,7 @@ export function AndyApp(props: AndyAppProps) {
       ['/andy-unorouter', 'switch upstream to UnoRouter', 'andy-unorouter'],
       ['/andy-aihubmix', 'switch upstream to AIHubMix', 'andy-aihubmix'],
       ['/andy-zai', 'switch upstream to Z.ai GLM Coding Plan', 'andy-zai'],
+      ['/andy-anthropic', 'switch upstream to Anthropic', 'andy-anthropic'],
       ['/andy-antseed', 'switch upstream to AntSeed', 'andy-antseed'],
       ['/antseed-models', "AntSeed's free models, and the peer to pin", 'antseed-models'],
       ['/tokenharbour-api-setup', 'store your TokenHarbour API key', 'tokenharbour-api-setup'],
@@ -2751,6 +2760,8 @@ export function AndyApp(props: AndyAppProps) {
       ['/aihubmix-models', 'the live free catalog — what is free and usable', 'aihubmix-models'],
       ['/zai-api-setup', 'store your Z.ai Coding Plan API key', 'zai-api-setup'],
       ['/zai-models', 'the GLM Coding Plan model registry', 'zai-models'],
+      ['/anthropic-api-setup', 'store your Anthropic API key', 'anthropic-api-setup'],
+      ['/anthropic-models', 'the Claude model roster (static, no key needed)', 'anthropic-models'],
       ['/models', 'free models of an upstream — /models [source]', 'models'],
       ['/logfare-models', 'fetch the live catalog; show what is up', 'logfare-models'],
       ['/ldxhub-api-setup', 'store your LDXHub API key', 'ldxhub-api-setup'],

@@ -8,11 +8,11 @@
  *     logfare      :4001  →  logfare.ai        (the default, shipped with the repo)
  *     tokenjuice   :4000  →  api.tokenjuice.ai (deepseek-claude's endpoint)
  *
- * — and six hosted/local gateways (tokenharbour, openrouter, unorouter,
- * antseed, aihubmix, zai) are identified by host rather than port. They go down
- * independently, so the point of this module is to make switching between
- * them a one-liner and to have the choice survive a restart
- * (`~/.andy/current-source`).
+ * — and seven hosted/local gateways (tokenharbour, openrouter, unorouter,
+ * antseed, aihubmix, zai, anthropic) are identified by host rather than port.
+ * They go down independently, so the point of this module is to make
+ * switching between them a one-liner and to have the choice survive a
+ * restart (`~/.andy/current-source`).
  *
  * Invariants:
  *  - Nothing here echoes a key. Credentials live in each source's profile
@@ -35,6 +35,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as aihubmix from './aihubmix.js';
 import * as antseed from './antseed.js';
+import * as anthropicSetup from './anthropic-setup.js';
 import * as logfare from './logfare.js';
 import * as openrouter from './openrouter.js';
 import * as tokenharbour from './tokenharbour.js';
@@ -364,6 +365,7 @@ export const BUILTIN_KEYS: ReadonlySet<string> = new Set([
   'antseed',
   'aihubmix',
   'zai',
+  'anthropic',
 ]);
 
 /**
@@ -408,6 +410,7 @@ export function activeKey(baseUrl: string | null | undefined): string | undefine
   if (unorouter.isUnorouter(baseUrl)) return 'unorouter';
   if (aihubmix.isAihubmix(baseUrl)) return 'aihubmix';
   if (zai.isZai(baseUrl)) return 'zai';
+  if (anthropicSetup.isAnthropic(baseUrl)) return 'anthropic';
   // Checked before the port match, and by port rather than by name: the buyer
   // hands out a plain http://localhost:8377 with no "antseed" in it, and the
   // regex below would otherwise find port 8377, miss it in sourceForPort()

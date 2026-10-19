@@ -484,6 +484,7 @@ export function cmdAndySource(ctx: AppCtx, key: string | null): void {
       ['unorouter', m.unorouter, 'UnoRouter', '/unorouter-api-setup'],
       ['aihubmix', m.aihubmix, 'AIHubMix', '/aihubmix-api-setup'],
       ['zai', m.zai, 'Z.ai', '/zai-api-setup'],
+      ['anthropic', m.anthropic, 'Anthropic', '/anthropic-api-setup'],
     ];
     for (const [kind, mod, label, setup] of hosted) {
       const creds = mod.loadCredentials();
@@ -739,6 +740,7 @@ function gateway(
   if (kind === 'unorouter') return [m.unorouter, 'UnoRouter'];
   if (kind === 'aihubmix') return [m.aihubmix, 'AIHubMix'];
   if (kind === 'zai') return [m.zai, 'Z.ai'];
+  if (kind === 'anthropic') return [m.anthropic, 'Anthropic'];
   if (kind === 'antseed') return [m.antseed, 'AntSeed'];
   return null;
 }
@@ -1066,6 +1068,7 @@ export function cmdModels(ctx: AppCtx, args: string[]): void {
       'antseed',
       'aihubmix',
       'zai',
+      'anthropic',
     ]);
     if (!known.has(key)) {
       ctx.sysLine(
@@ -1147,6 +1150,12 @@ async function modelsForKind(
     // floor refuses free peers on its own.
     return (m.antseed.usableFreeModels?.() ??
       Promise.resolve([null, 'no catalog'] as [CatalogModel[] | null, string]));
+  }
+  if (kind === 'anthropic') {
+    // Keyless like OpenRouter/UnoRouter/AIHubMix: the list is the static
+    // KNOWN_MODELS roster, not a credential-scoped marketplace fetch, so it
+    // is always there to show even before a key is set.
+    return m.anthropic.fetchModels();
   }
   if (kind === 'logfare') {
     // Logfare's catalog is a health feed — it carries no pricing at all, so
