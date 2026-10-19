@@ -37,7 +37,7 @@ import { THEME_NAMES, currentTheme } from './theme.js';
 import * as updateMod from './update.js';
 
 /** andy/__init__.py's `__version__`, folded here per PORT-MAP row 42. */
-export const VERSION = '1.0.7';
+export const VERSION = '1.0.8';
 
 const CLI_PATH = fileURLToPath(import.meta.url);
 
