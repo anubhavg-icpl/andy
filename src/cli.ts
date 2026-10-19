@@ -220,7 +220,7 @@ function parseArgv(argv: string[]): Args {
     process.exit(0);
   }
   if (args.version) {
-    process.stdout.write(`andy ${VERSION}\n`);
+    process.stdout.write(`andy ${VERSION} — built by Anubhav Gain\n`);
     process.exit(0);
   }
   if (positionals.length > 0) {

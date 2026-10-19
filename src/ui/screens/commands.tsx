@@ -253,7 +253,7 @@ export function cmdCost(ctx: AppCtx): void {
   );
 }
 
-export function cmdLimits(ctx: AppCtx): void {
+export async function cmdLimits(ctx: AppCtx): Promise<void> {
   // Every limit here has bitten at least once, and the reason they are worth a
   // command is that they are otherwise invisible: a turn that ran out of
   // rounds looked exactly like one that finished. Naming the source of each
@@ -261,7 +261,11 @@ export function cmdLimits(ctx: AppCtx): void {
   const p = ctx.pal();
   const a = ctx.agent();
   if (!a) return;
-  const window = a.contextWindow();
+  // contextWindow() is async — it may hit the active source's live catalog.
+  // /limits is a one-shot user command, not a render-loop event handler, so
+  // awaiting here is simply correct; nothing needs the fire-and-cache
+  // pattern handleEvent() uses in app.tsx.
+  const window = await a.contextWindow();
   const fromCatalog = window !== ctx.cfg.contextWindow;
   const used = a.lastInputTokens ?? 0;
   const rows: [string, string, string][] = [

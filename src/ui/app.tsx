@@ -226,7 +226,13 @@ export interface AgentLike {
   cancelTurn(): void;
   notice(text: string): void;
   compact(): Promise<[boolean, string]>;
-  contextWindow(): number;
+  // async in agent.ts: it may hit the active source's live catalog. Was
+  // mis-declared `(): number` here, which only "typechecked" because the
+  // lazy sibling-loader's `(await mod) as T` cast is unchecked — the real
+  // caller silently got a Promise<number> passed into arithmetic (NaN on
+  // every context gauge, every session). See contextWindowRef in the
+  // component below for how the caller now actually handles this.
+  contextWindow(): Promise<number>;
   /** Python `agent._client = None` — drop the cached client on source switch. */
   resetClient?(): void;
 }
@@ -1331,6 +1337,14 @@ export function AndyApp(props: AndyAppProps) {
   const reasonBufRef = useRef('');
   const lastOutTokRef = useRef(0);
   const lastCallInputRef = useRef(0);
+  // a.contextWindow() is async (it may hit the active source's live catalog —
+  // see agent.ts). handleEvent() below cannot become async itself (it is
+  // called synchronously and is part of ImperativeHandle's declared `(ev:
+  // AgentEvent): void` contract), so the resolved value is cached here and
+  // read synchronously; the ref starts at the configured fallback rather
+  // than 0, so the very first call before any resolution lands still reads
+  // as a real number instead of producing NaN downstream.
+  const contextWindowRef = useRef(1_000_000);
   const teamTokensRef = useRef<[number, number, number]>([0, 0, 0]);
   const huntStopRef = useRef<StopSignal | null>(null);
   const huntRunRef = useRef<HuntRunLike | null>(null);
@@ -2112,8 +2126,21 @@ export function AndyApp(props: AndyAppProps) {
       lastCallInputRef.current = ev.input;
       // The window is passed alongside so the gauge's percentage is a share of
       // *this model's* window, not of the configured fallback — resolved the
-      // same way the auto-compact threshold resolves it.
-      teleRail()?.setContext(lastCallInputRef.current, a.contextWindow());
+      // same way the auto-compact threshold resolves it. contextWindow() is
+      // async (see contextWindowRef's own comment above), so this call reads
+      // the last-resolved value immediately (never NaN — the ref starts at a
+      // real fallback) and kicks off a fresh resolution for the *next* event
+      // in the background; awaiting inline isn't an option here because
+      // handleEvent is synchronous by contract.
+      teleRail()?.setContext(lastCallInputRef.current, contextWindowRef.current);
+      void a
+        .contextWindow()
+        .then((w) => {
+          contextWindowRef.current = w;
+        })
+        .catch(() => {
+          /* keep the last-known value; a lookup failure must not blank the gauge */
+        });
     } else if (etype === 'tool_call') {
       flushStream();
       const args = ev.args ?? {};
@@ -2623,7 +2650,7 @@ export function AndyApp(props: AndyAppProps) {
       save: (a) => cmdSave(ctx, a),
       load: (a) => cmdLoad(ctx, a),
       compact: () => cmdCompact(ctx),
-      limits: () => cmdLimits(ctx),
+      limits: async () => cmdLimits(ctx),
       team: (a) => cmdTeam(ctx, a),
       osint: (a) => cmdOsint(ctx, a),
       'osint-tree': (a) => cmdOsintTree(ctx, a),
