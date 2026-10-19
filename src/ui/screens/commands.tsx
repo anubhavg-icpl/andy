@@ -65,6 +65,7 @@ export function cmdHelp(ctx: AppCtx, _args?: string[]): void {
     ['/load [name]', 'restore a saved session'],
     ['/compact', 'summarise history to free context'],
     ['/limits', 'context window, round caps, timeouts — and where each comes from'],
+    ['/skills', 'discoverable skills (.andy/skills, ~/.andy/skills) and what each does'],
     ['/team <task>', 'fan the task out across parallel agents'],
     ['/osint [kind] <target>', 'open-source recon — email, phone, socials'],
     ['/osint-tree [kind|path]', 're-show a finished recon as a result tree'],
@@ -325,6 +326,37 @@ export async function cmdLimits(ctx: AppCtx): Promise<void> {
           <Text>{'\n'}</Text>
         </Box>
       ))}
+    </Box>,
+  );
+}
+
+export async function cmdSkills(ctx: AppCtx): Promise<void> {
+  const p = ctx.pal();
+  const m = ctx.mods();
+  if (!m) return;
+  const skills = m.skills.list(ctx.cfg.workdir);
+  const roots = m.skills.skillRootsFor(ctx.cfg.workdir);
+  ctx.say(
+    <Box flexDirection="column">
+      <Text bold color={p.accent}>
+        {'  SKILLS\n\n'}
+      </Text>
+      {skills.length === 0 ? (
+        <Text color={p.amber}>{'  none discoverable.\n\n'}</Text>
+      ) : (
+        skills.map((s) => (
+          <Box key={s.name} flexDirection="column">
+            <Text bold color={p.primary}>{`  ${s.name}\n`}</Text>
+            <Text color={p.dim}>{`    ${s.description}\n`}</Text>
+          </Box>
+        ))
+      )}
+      <Box flexDirection="column">
+        <Text color={p.dim}>{'  searched (project overrides global):\n'}</Text>
+        {roots.map((r) => (
+          <Text key={r} color={p.dim}>{`    ${r}\n`}</Text>
+        ))}
+      </Box>
     </Box>,
   );
 }

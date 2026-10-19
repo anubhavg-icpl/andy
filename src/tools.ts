@@ -388,6 +388,20 @@ export const TOOL_SCHEMAS: ToolSchema[] = [
       },
     },
   },
+  {
+    // Description is a placeholder — agent.ts's toolSchemas() overwrites it
+    // per-session with skills.toolDescription(workdir), which lists what is
+    // actually discoverable right now. See skills.ts's file contract.
+    name: 'skill',
+    description: 'Load a packaged skill by name. See /skills for what is available.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        skill: { type: 'string', description: 'The skill name, from its frontmatter.' },
+      },
+      required: ['skill'],
+    },
+  },
 ];
 
 // Pane messaging. Advertised only to a pane-session agent (Agent.can_peer),
@@ -2013,6 +2027,30 @@ async function toolAgentInbox(args: Record<string, unknown>, cfg: Config): Promi
   return { output: panes.formatMessages(msgs) };
 }
 
+// ---- skill ------------------------------------------------------------
+
+/**
+ * Loads a skill's body as a tool result — never executes it. See skills.ts's
+ * file contract for the whole mechanic; this is deliberately the thinnest
+ * possible wrapper so the loading logic lives in exactly one place.
+ */
+async function toolSkill(args: Record<string, unknown>, cfg: Config): Promise<ToolResult> {
+  const name = _text(args['skill'] ?? '').trim();
+  if (!name) return { output: 'skill name is required', isError: true };
+  const skills = await import('./skills.js');
+  const body = skills.load(name, cfg.workdir);
+  if (body === null) {
+    const available = skills.list(cfg.workdir).map((s) => s.name);
+    return {
+      output: available.length
+        ? `no skill named '${name}' — available: ${available.join(', ')}`
+        : `no skill named '${name}' — none are discoverable (see /skills)`,
+      isError: true,
+    };
+  }
+  return { output: body };
+}
+
 // === SECTION === dispatch + labels ===
 
 const DISPATCH: Record<string, (args: Record<string, unknown>, cfg: Config) => Promise<ToolResult>> = {
@@ -2036,6 +2074,7 @@ const DISPATCH: Record<string, (args: Record<string, unknown>, cfg: Config) => P
   ldxhub_convert: toolLdxhubConvert,
   ldxhub_refine: toolLdxhubRefine,
   ldxhub_list: toolLdxhubList,
+  skill: toolSkill,
 };
 
 export function summariseCall(

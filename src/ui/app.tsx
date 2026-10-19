@@ -66,6 +66,7 @@ import {
   cmdCost,
   cmdHelp,
   cmdLimits,
+  cmdSkills,
   cmdLoad,
   cmdMode,
   cmdPanes,
@@ -569,6 +570,14 @@ export interface McpModule {
   hasEverConnected(): boolean;
 }
 
+/** The slice of skills.ts the TUI drives — see skills.ts's file contract. */
+export interface SkillsModule {
+  list(workdir?: string): Array<{ name: string; description: string; dir: string }>;
+  load(name: string, workdir?: string): string | null;
+  toolDescription(workdir?: string): string;
+  skillRootsFor(workdir?: string): string[];
+}
+
 export interface ProviderModule {
   loadCredentials(): [string, string, string] | null;
   fetchModels(token?: string): Promise<[CatalogModel[] | null, string]>;
@@ -915,6 +924,7 @@ export interface Mods {
   anthropic: ProviderModule;
   antseed: ProviderModule;
   mcp: McpModule;
+  skills: SkillsModule;
   ldxhub: LdxhubModule;
   agent: { Agent: AgentCtor };
   team: TeamModule;
@@ -959,6 +969,7 @@ async function loadMods(): Promise<Mods> {
     anthropicSetup,
     antseed,
     mcp,
+    skills,
     ldxhub,
     agent,
     team,
@@ -997,6 +1008,7 @@ async function loadMods(): Promise<Mods> {
     sibling<ProviderModule>(import('../anthropic-setup.js')),
     sibling<ProviderModule>(import('../antseed.js')),
     sibling<McpModule>(import('../mcp.js')),
+    sibling<SkillsModule>(import('../skills.js')),
     sibling<LdxhubModule>(import('../ldxhub.js')),
     sibling<{ Agent: AgentCtor }>(import('../agent.js')),
     sibling<TeamModule>(import('../team.js')),
@@ -1036,6 +1048,7 @@ async function loadMods(): Promise<Mods> {
     anthropic: anthropicSetup,
     antseed,
     mcp,
+    skills,
     ldxhub,
     agent,
     team,
@@ -2595,6 +2608,8 @@ export function AndyApp(props: AndyAppProps) {
     'osint-tree',
     // Pure reads of in-memory limits — most useful during a long turn.
     'limits',
+    // A directory walk + frontmatter parse, same cost class as /limits.
+    'skills',
     // A display toggle reads and writes only harness state, starts no turn.
     'think',
     // andy-opencode hands the terminal to a *different* program and starts no
@@ -2682,6 +2697,7 @@ export function AndyApp(props: AndyAppProps) {
       load: (a) => cmdLoad(ctx, a),
       compact: () => cmdCompact(ctx),
       limits: async () => cmdLimits(ctx),
+      skills: async () => cmdSkills(ctx),
       team: (a) => cmdTeam(ctx, a),
       osint: (a) => cmdOsint(ctx, a),
       'osint-tree': (a) => cmdOsintTree(ctx, a),
@@ -2845,6 +2861,7 @@ export function AndyApp(props: AndyAppProps) {
       ['/mcp-add', 'add an MCP server — /mcp-add <name> <command> [args]', 'mcp-add'],
       ['/mcp-remove', 'remove an MCP server', 'mcp-remove'],
       ['/mcp-list', 'list configured MCP servers and their tools', 'mcp-list'],
+      ['/skills', 'list discoverable skills (.andy/skills, ~/.andy/skills)', 'skills'],
       ['/models', 'free models of an upstream — /models [source]', 'models'],
       ['/logfare-models', 'fetch the live catalog; show what is up', 'logfare-models'],
       ['/ldxhub-api-setup', 'store your LDXHub API key', 'ldxhub-api-setup'],

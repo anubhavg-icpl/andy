@@ -36,6 +36,7 @@ import type { Message, MessageParam, ToolUnion } from '@anthropic-ai/sdk/resourc
 import { type Config, DEFAULT_MODE, MODES, findAgentsFile, priceFor } from './config.js';
 import { hasKey } from './ldxhub.js';
 import { cachedToolSchemas as mcpCachedToolSchemas, connectAll as mcpConnectAll } from './mcp.js';
+import { toolDescription as skillToolDescription } from './skills.js';
 import { Scope } from './scope.js';
 import {
   HUNT_ONLY_TOOLS,
@@ -381,7 +382,15 @@ export class Agent {
     // A session with no configured servers (or before the first connect)
     // contributes nothing here, same as every other optional source.
     const schemas = [...TOOL_SCHEMAS, ...PEER_SCHEMAS, ...mcpCachedToolSchemas()];
-    return schemas.filter((t) => !deny.has(t.name));
+    // The static schema's description is a placeholder — swap in the live
+    // discoverable-skills list for this workdir, same reasoning as
+    // skills.ts's toolDescription(): the model should see what's on offer
+    // without spending a call to find out. A session with zero skill tool
+    // schemas (denied, somehow) just skips this — .map leaves it alone.
+    const withSkills = schemas.map((t) =>
+      t.name === 'skill' ? { ...t, description: skillToolDescription(this.cfg.workdir) } : t,
+    );
+    return withSkills.filter((t) => !deny.has(t.name));
   }
 
   /** Reason a tool is unavailable in this mode, or null if it is allowed. */
