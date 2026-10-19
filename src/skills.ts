@@ -40,6 +40,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import { andyHome, expandTilde } from './shared.js';
+import * as plugins from './plugins.js';
 
 export interface SkillMeta {
   name: string;
@@ -76,8 +77,10 @@ function skillRoots(workdir: string): string[] {
   return [path.join(workdir, '.andy', 'skills'), path.join(andyHome(), 'skills')];
 }
 
-function readSkillDir(root: string, name: string): SkillMeta | null {
-  const dir = path.join(root, name);
+/** `namePrefix` is how a plugin-provided skill becomes `<plugin>:<skill>` —
+ * see pluginSkills() below. Bare global/project skills pass '' (no ':'). */
+function readSkillDir(root: string, entry: string, namePrefix = ''): SkillMeta | null {
+  const dir = path.join(root, entry);
   const file = path.join(dir, 'SKILL.md');
   let raw: string;
   try {
@@ -90,7 +93,27 @@ function readSkillDir(root: string, name: string): SkillMeta | null {
   const skillName = typeof fm['name'] === 'string' ? fm['name'].trim() : '';
   const description = typeof fm['description'] === 'string' ? fm['description'].trim() : '';
   if (!skillName || !description) return null;
-  return { name: skillName, description, dir };
+  return { name: namePrefix ? `${namePrefix}:${skillName}` : skillName, description, dir };
+}
+
+/**
+ * Every skill bundled by an installed plugin, namespaced `<plugin>:<skill>`
+ * — Claude Code's own convention for a plugin-provided resource. Synchronous
+ * (plugins.ts's own reads are plain fs sync calls — same reason list() below
+ * must stay sync: it's called from agent.ts's toolSchemas(), which the turn
+ * loop calls synchronously once per round).
+ */
+function pluginSkills(): SkillMeta[] {
+  const out: SkillMeta[] = [];
+  for (const plugin of plugins.list()) {
+    const root = plugins.skillsRootFor(plugin.dir);
+    if (!root) continue;
+    for (const entry of plugin.skillDirs) {
+      const meta = readSkillDir(root, entry, plugin.name);
+      if (meta) out.push(meta);
+    }
+  }
+  return out;
 }
 
 /**
@@ -111,6 +134,13 @@ export function list(workdir: string = process.cwd()): SkillMeta[] {
       const meta = readSkillDir(root, entry);
       if (meta && !seen.has(meta.name)) seen.set(meta.name, meta);
     }
+  }
+  // Plugin skills are namespaced (plugin:skill), so they can never collide
+  // with a bare global/project skill name — added after the loop above
+  // rather than folded into precedence, since there is no shadowing
+  // question to resolve between them.
+  for (const meta of pluginSkills()) {
+    if (!seen.has(meta.name)) seen.set(meta.name, meta);
   }
   return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name));
 }

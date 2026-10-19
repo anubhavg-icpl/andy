@@ -91,6 +91,7 @@ import {
   cmdAndyTokenharbour,
 } from './screens/model-commands.js';
 import { cmdMcpAdd, cmdMcpList, cmdMcpRemove } from './screens/mcp-commands.js';
+import { cmdPluginInstall, cmdPluginRemove, cmdPlugins } from './screens/plugin-commands.js';
 import {
   cmdAd,
   cmdBugHunt,
@@ -578,6 +579,20 @@ export interface SkillsModule {
   skillRootsFor(workdir?: string): string[];
 }
 
+/** The slice of plugins.ts the TUI drives — see plugins.ts's file contract. */
+export interface PluginsModule {
+  list(): Array<{
+    name: string;
+    description: string;
+    version?: string;
+    dir: string;
+    skillDirs: string[];
+  }>;
+  installLocal(sourceDir: string): { name: string; description: string; version?: string };
+  remove(name: string): boolean;
+  looksLikePluginName(name: string): boolean;
+}
+
 export interface ProviderModule {
   loadCredentials(): [string, string, string] | null;
   fetchModels(token?: string): Promise<[CatalogModel[] | null, string]>;
@@ -925,6 +940,7 @@ export interface Mods {
   antseed: ProviderModule;
   mcp: McpModule;
   skills: SkillsModule;
+  plugins: PluginsModule;
   ldxhub: LdxhubModule;
   agent: { Agent: AgentCtor };
   team: TeamModule;
@@ -970,6 +986,7 @@ async function loadMods(): Promise<Mods> {
     antseed,
     mcp,
     skills,
+    plugins,
     ldxhub,
     agent,
     team,
@@ -1009,6 +1026,7 @@ async function loadMods(): Promise<Mods> {
     sibling<ProviderModule>(import('../antseed.js')),
     sibling<McpModule>(import('../mcp.js')),
     sibling<SkillsModule>(import('../skills.js')),
+    sibling<PluginsModule>(import('../plugins.js')),
     sibling<LdxhubModule>(import('../ldxhub.js')),
     sibling<{ Agent: AgentCtor }>(import('../agent.js')),
     sibling<TeamModule>(import('../team.js')),
@@ -1049,6 +1067,7 @@ async function loadMods(): Promise<Mods> {
     antseed,
     mcp,
     skills,
+    plugins,
     ldxhub,
     agent,
     team,
@@ -2601,6 +2620,7 @@ export function AndyApp(props: AndyAppProps) {
     'zai-api-setup', 'zai-models', 'andy-zai',
     'anthropic-api-setup', 'anthropic-models', 'andy-anthropic',
     'mcp-add', 'mcp-remove', 'mcp-list',
+    'plugin-install', 'plugin-remove', 'plugins',
     'andy-antseed', 'antseed-models', 'logfare-models',
     // LDXHub: the key and the catalogs are local reads; the catalogs public.
     'ldxhub-api-setup', 'ldxhub-models',
@@ -2736,6 +2756,9 @@ export function AndyApp(props: AndyAppProps) {
       'mcp-add': (a) => cmdMcpAdd(ctx, a),
       'mcp-remove': (a) => cmdMcpRemove(ctx, a),
       'mcp-list': () => cmdMcpList(ctx),
+      'plugin-install': (a) => cmdPluginInstall(ctx, a),
+      'plugin-remove': (a) => cmdPluginRemove(ctx, a),
+      plugins: () => cmdPlugins(ctx),
       'antseed-models': () => cmdModels(ctx, ['antseed']),
       models: (a) => cmdModels(ctx, a),
       'logfare-models': () => cmdLogfareModels(ctx),
@@ -2862,6 +2885,9 @@ export function AndyApp(props: AndyAppProps) {
       ['/mcp-remove', 'remove an MCP server', 'mcp-remove'],
       ['/mcp-list', 'list configured MCP servers and their tools', 'mcp-list'],
       ['/skills', 'list discoverable skills (.andy/skills, ~/.andy/skills)', 'skills'],
+      ['/plugin-install', 'install a local plugin (bundle of skills)', 'plugin-install'],
+      ['/plugin-remove', 'remove an installed plugin', 'plugin-remove'],
+      ['/plugins', 'list installed plugins', 'plugins'],
       ['/models', 'free models of an upstream — /models [source]', 'models'],
       ['/logfare-models', 'fetch the live catalog; show what is up', 'logfare-models'],
       ['/ldxhub-api-setup', 'store your LDXHub API key', 'ldxhub-api-setup'],
