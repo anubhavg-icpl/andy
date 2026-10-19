@@ -753,7 +753,7 @@ describe('wiring', () => {
     // palette lists it
     expect(appSrc).toContain("['/crack', 'crack hashes offline")
     // crack.py is imported
-    expect(appSrc).toContain("sibling<CrackModule>('../crack.js')")
+    expect(appSrc).toContain("sibling<CrackModule>(import('../crack.js'))")
     // the refactor that lets /crack and /osint share one finalise hook
     expect(appSrc).toContain('finalise?: () => void;')
     // _run_turn still honours osint_case

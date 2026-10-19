@@ -819,7 +819,7 @@ describe('aihubmix', () => {
     check('tui: the launcher restores it',
       cliSrc.includes("aihubmix: () => import('./aihubmix.js'),"));
     check('tui: the module is imported by the app',
-      appSrc.includes("sibling<ProviderModule>('../aihubmix.js')"));
+      appSrc.includes("sibling<ProviderModule>(import('../aihubmix.js'))"));
     check('tui: /models completion offers it', modelsPool.includes("'antseed'"));
     check('tui: it is a known source for the guard',
       modelCmdSrc.includes("'tokenharbour', 'openrouter', 'unorouter', 'antseed', 'logfare', 'aihubmix'"));

@@ -217,7 +217,7 @@ describe('zai — TUI and one-command installation wiring', () => {
       expect(surface).toContain('/zai-api-setup');
       expect(surface).toContain('/zai-models');
     }
-    expect(app).toContain("sibling<ProviderModule>('../zai.js')");
+    expect(app).toContain("sibling<ProviderModule>(import('../zai.js'))");
     expect(cli).toContain("zai: () => import('./zai.js')");
     expect(modelCommands).toContain("if (kind === 'zai') return [m.zai, 'Z.ai'];");
     expect(launcher).toContain('|zai');

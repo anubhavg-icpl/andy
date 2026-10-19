@@ -9,14 +9,24 @@
  * commands dispatch before the busy gate (the busy-permitted set is BUSY_OK);
  * the transcript is append-only through ChatPane's imperative handle.
  *
- * WHY the lazy sibling registry below: every sibling module (config, agent,
- * tools, ui/widgets, …) is ported in parallel by other lanes and may not exist
- * on disk yet, and this file must typecheck with zero errors of its own before
- * they land. Each sibling is therefore imported through a non-literal
- * `import(specifier)` (left unresolved at typecheck, resolved at runtime by
- * tsx/Node) and cast to the PORT-MAP §2 contract written beside it. At
- * integration time these can be swapped for static imports without touching
- * any handler logic.
+ * WHY the lazy sibling registry below: loadMods() defers every sibling
+ * module (config, agent, tools, ui/widgets, …) until the shell actually
+ * mounts, so none of their load cost lands before the boot screen renders
+ * and no load-order/circular-import assumption has to hold at module-eval
+ * time. Each sibling is loaded via `sibling<T>(import('./x.js'))` — the
+ * `import()` call's own argument MUST be a literal string, not a variable:
+ * esbuild/tsup only rewrites a dynamic import's specifier to the real
+ * emitted chunk filename when it can see that literal directly at the call
+ * site. An earlier version routed the literal through a wrapper
+ * (`sibling<T>(specifier: string)`, `import(specifier)` inside), which made
+ * every one of these invisible to the bundler — the raw src-relative path
+ * (`"../config.js"`) survived unrewritten into the published dist, where it
+ * resolves relative to the bundled file's own (flattened) location instead
+ * of the original src/ tree, so EVERY real session failed with
+ * ERR_MODULE_NOT_FOUND the moment loadMods() ran — --version/--help/
+ * --list-models never touch it, which is how this stayed invisible. Keep
+ * passing the literal `import('./x.js')` expression itself to `sibling()`,
+ * never a string.
  */
 
 import { Box, Text, useApp, useInput, useWindowSize } from 'ink';
@@ -98,9 +108,14 @@ import {
 
 // === SECTION === sibling contracts (PORT-MAP §2, one entry per import) ===
 
-/** Non-literal on purpose — see the file contract block. */
-async function sibling<T>(specifier: string): Promise<T> {
-  return (await import(specifier)) as T;
+/**
+ * Takes the Promise an already-literal `import('./x.js')` returned at the
+ * call site — never a path string — and casts its resolved module to the
+ * PORT-MAP §2 contract written beside that call. See the file contract
+ * block above for why the literal has to live at the `import()` call site.
+ */
+async function sibling<T>(mod: Promise<unknown>): Promise<T> {
+  return (await mod) as T;
 }
 
 /** theme.Palette — frozen dataclass of hex/ANSI colour strings. */
@@ -932,42 +947,42 @@ async function loadMods(): Promise<Mods> {
     complete,
     paletteCmd,
   ] = await Promise.all([
-    sibling<ConfigModule>('../config.js'),
-    sibling<ThemeModule>('../theme.js'),
-    sibling<SessionModule>('../session.js'),
-    sibling<ToolsModule>('../tools.js'),
-    sibling<ScopeModule>('../scope.js'),
-    sibling<SandboxModule>('../sandbox.js'),
-    sibling<SourcesModule>('../sources.js'),
-    sibling<ProviderModule>('../logfare.js'),
-    sibling<ProviderModule>('../tokenharbour.js'),
-    sibling<ProviderModule>('../openrouter.js'),
-    sibling<ProviderModule>('../unorouter.js'),
-    sibling<ProviderModule>('../aihubmix.js'),
-    sibling<ProviderModule>('../zai.js'),
-    sibling<ProviderModule>('../anthropic-setup.js'),
-    sibling<ProviderModule>('../antseed.js'),
-    sibling<LdxhubModule>('../ldxhub.js'),
-    sibling<{ Agent: AgentCtor }>('../agent.js'),
-    sibling<TeamModule>('../team.js'),
-    sibling<HuntModule>('../hunt.js'),
-    sibling<AdModule>('../ad.js'),
-    sibling<CrackModule>('../crack.js'),
-    sibling<OsintModule>('../osint.js'),
-    sibling<OsintTreeModule>('../osint-tree.js'),
-    sibling<PhishModule>('../phish.js'),
-    sibling<PanesModule>('../panes.js'),
-    sibling<OpencodeModule>('../opencode.js'),
-    sibling<ScopeValidatorModule>('../scope-validator.js'),
-    sibling<WidgetsModule>('./widgets.js'),
-    sibling<RenderersModule>('./renderers.js'),
-    sibling<MarkdownModule>('./markdown.js'),
-    sibling<RailsModule>('./rails.js'),
-    sibling<WebModule>('./web.js'),
-    sibling<BannerModule>('./banner.js'),
-    sibling<BootModule>('./boot.js'),
-    sibling<CompleteModule>('./complete.js'),
-    sibling<PaletteCmdModule>('./palette-cmd.js'),
+    sibling<ConfigModule>(import('../config.js')),
+    sibling<ThemeModule>(import('../theme.js')),
+    sibling<SessionModule>(import('../session.js')),
+    sibling<ToolsModule>(import('../tools.js')),
+    sibling<ScopeModule>(import('../scope.js')),
+    sibling<SandboxModule>(import('../sandbox.js')),
+    sibling<SourcesModule>(import('../sources.js')),
+    sibling<ProviderModule>(import('../logfare.js')),
+    sibling<ProviderModule>(import('../tokenharbour.js')),
+    sibling<ProviderModule>(import('../openrouter.js')),
+    sibling<ProviderModule>(import('../unorouter.js')),
+    sibling<ProviderModule>(import('../aihubmix.js')),
+    sibling<ProviderModule>(import('../zai.js')),
+    sibling<ProviderModule>(import('../anthropic-setup.js')),
+    sibling<ProviderModule>(import('../antseed.js')),
+    sibling<LdxhubModule>(import('../ldxhub.js')),
+    sibling<{ Agent: AgentCtor }>(import('../agent.js')),
+    sibling<TeamModule>(import('../team.js')),
+    sibling<HuntModule>(import('../hunt.js')),
+    sibling<AdModule>(import('../ad.js')),
+    sibling<CrackModule>(import('../crack.js')),
+    sibling<OsintModule>(import('../osint.js')),
+    sibling<OsintTreeModule>(import('../osint-tree.js')),
+    sibling<PhishModule>(import('../phish.js')),
+    sibling<PanesModule>(import('../panes.js')),
+    sibling<OpencodeModule>(import('../opencode.js')),
+    sibling<ScopeValidatorModule>(import('../scope-validator.js')),
+    sibling<WidgetsModule>(import('./widgets.js')),
+    sibling<RenderersModule>(import('./renderers.js')),
+    sibling<MarkdownModule>(import('./markdown.js')),
+    sibling<RailsModule>(import('./rails.js')),
+    sibling<WebModule>(import('./web.js')),
+    sibling<BannerModule>(import('./banner.js')),
+    sibling<BootModule>(import('./boot.js')),
+    sibling<CompleteModule>(import('./complete.js')),
+    sibling<PaletteCmdModule>(import('./palette-cmd.js')),
   ]);
   return {
     config,
@@ -3109,7 +3124,7 @@ function CommandPaletteLazy(props: {
   useEffect(() => {
     let alive = true;
     void (async () => {
-      const m = await sibling<PaletteCmdModule>('./palette-cmd.js');
+      const m = await sibling<PaletteCmdModule>(import('./palette-cmd.js'));
       if (alive) setComp(() => m.CommandPalette);
     })();
     return () => {
